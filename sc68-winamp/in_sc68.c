@@ -574,12 +574,11 @@ static
  * @reval  -1 on file not found
  * @retval !0 stopping winamp error
  ****************************************************************************/
-int play(const in_char *uri)
+int play(const in_char *fn)
 {
   int err = 1;
-  int settrack = 0;
 
-  if (!uri || !*uri)
+  if (!fn || !*fn)
     return -1;
 
   create_sc68();
@@ -605,7 +604,9 @@ int play(const in_char *uri)
     goto exit;
 
   char* filename = 0;
-  settrack = extract_track_from_uri(uri, &filename);
+  char uri[MAX_PATH] = { 0 };
+  ConvertUnicodeFn(uri, ARRAYSIZE(uri), (wchar_t*)fn, CP_ACP);
+  const int settrack = extract_track_from_uri(uri, &filename);
   if (settrack) {
     DBG("got specific track -- %d\n", settrack);
   }
