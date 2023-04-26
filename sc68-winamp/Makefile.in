@@ -1,0 +1,107 @@
+# -*- makefile -*-
+#
+# sc68-winamp @configure_input@
+#
+# (C) 2013-2015 https://sourceforge.net/users/benjihan
+#
+
+# Autoconf stuff
+prefix       := @prefix@
+exec_prefix  := @exec_prefix@
+libexecdir   := @libexecdir@
+libdir       := @libdir@
+srcdir       := @srcdir@
+host_alias   := @host_alias@
+
+# PACKAGE_URL       := @PACKAGE_URL@
+# PACKAGE_BUGREPORT := @PACKAGE_BUGREPORT@
+# PACKAGE_STRING    := @PACKAGE_STRING@
+# PACKAGE_VERSION   := @PACKAGE_VERSION@
+# PACKAGE_TARNAME   := @PACKAGE_TARNAME@
+# PACKAGE_NAME      := @PACKAGE_NAME@
+
+# Winamp install dir
+WADIR        := '@wa_dir@'
+WADLL        := $(WADIR)/Plugins
+
+# Winamp SDK
+WASDK        := '@wa_sdk@'
+WAINC        := -I$(WASDK) -I$(WASDK)/wasabi
+
+# WIndows Platform SDK
+WPSDK        := '@wp_sdk@'
+
+# sc68
+sc68_CFLAGS  := @sc68_CFLAGS@
+sc68_LIBS    := @sc68_LIBS@
+
+# Toolchain
+CC           := @CC@
+CPP	     := @CPP@
+DEFS         := @DEFS@
+CPPFLAGS     := $(DEFS) @CPPFLAGS@ $(sc68_CFLAGS) -I. $(WAINC)
+CFLAGS       := @CFLAGS@ -m32 -mwin32 -mdll
+LIBS         := @LIBS@ $(sc68_LIBS)
+LDFLAGS      := @LDFLAGS@ $(LIBS) 
+STRIP        := @STRIP@		#$(CC:%gcc=%strip)
+WINDRES      := @WINDRES@	#$(CC:%gcc=%windres)
+
+VPATH = @srcdir@
+
+OBJS := in_sc68.o transcoder.o fileinfo.o configdlg.o dll.o dbg.o	\
+ tracksel.o cache.o
+# resource.o should not be needed as the resource should be in the
+# libsc68 library. At least it will after the bug
+# <https://sourceforge.net/p/sc68/bugs/15/> is fix.
+
+all: in_sc68.dll
+
+in_sc68.dll: $(OBJS)
+	$(CC) -v -mdll -o $@ $^ -static-libgcc -static $(LDFLAGS)
+
+%.a: %.o
+	$(CC:%gcc=%ar) -cms $@ $<
+
+%.o: %.rc
+	$(WINDRES) -i $< -o $@
+
+# ======================================================================
+# Install and such
+# ======================================================================
+
+install: in_sc68.dll
+	install -D -s $< $(libexecdir)/$<
+
+install-strip: in_sc68.dll
+	install --strip-program=$(STRIP) -D -s $< $(libexecdir)/$<
+
+winamp: in_sc68.dll
+	test -n $(WADIR)
+	test -d $(WADLL)
+	install -D -s $< $(WADLL)/$<
+
+uninstall:
+	@rm -f -v -- $(libexecdir)/in_sc68.dll
+	@test -z $(WADIR) || rm -f -v -- $(WINAMP_PLUGIN)/in_sc68.dll
+
+clean:
+	-rm -f -- *.dll *.o
+
+distclean: clean
+	-rm -fv -- config.* Makefile \
+		$(srcdir)/configure $(srcdir)/config.h.in* \
+		$(srcdir)/aclocal.m4
+	-rm -rf --  $(srcdir)/autom4te.cache
+
+# ======================================================================
+# Some autoconf rules
+# ======================================================================
+
+configure: configure.ac ./config.status
+	(cd $(srcdir) && autoreconf -v)
+	$(SHELL) ./config.status --recheck
+
+%: %.in ./config.status
+	$(SHELL) ./config.status
+
+.PHONY: all clean winamp distclean install uninstall

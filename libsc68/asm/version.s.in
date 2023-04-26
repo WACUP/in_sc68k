@@ -1,0 +1,6 @@
+;;; @configure_input@
+MAJOR:	= @VER_MAJOR@
+MINOR:	= @VER_MINOR@
+PATCH:	= @VER_PATCH@
+TWEAK:	= @VER_TWEAK@
+VERNUM:	= (MAJOR<<28)+(MINOR<<20)+(PATCH<<12)+TWEAK

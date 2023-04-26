@@ -1,0 +1,15 @@
+               sourcer68 - 68000 disassembler and sourcer
+                                   
+                 sourcer68 is part of the sc68 project
+                       
+                    (C) 1998-2016 Benjamin Gerard
+
+
+ABOUT SOURCER68
+
+  A program using the desa68 library to disassemble and source 68000
+  based programs. Sourcer68 supports binary, TOS program (including
+  GNU extensions) and sc68 compatible file.
+
+  Currently the program is being re-work and is very limited. Sorry
+  about that.

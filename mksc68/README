@@ -1,0 +1,35 @@
+                    mksc68 - sc68 swiss army knife
+
+                  mksc68 is part of the sc68 project
+
+                    (C) 1998-2016 Benjamin Gerard
+
+
+ABOUT MKSC68
+
+  mksc68 is a terminal shell program used essentially to create and
+  edit sc68 files. It can also be used to play or debug sc68 files and
+  many other things.
+
+
+DEPENDENCIES
+
+  o file68 (required)
+
+    sc68 project's library used to load and manage sc68 compatible
+    files.
+
+  o libsc68 (required)
+
+    sc68 engine library.
+
+
+AUTHOR
+
+  Benjamin Gerard AKA Ben/OVR <https://sourceforge.net/users/benjihan>
+
+
+LINKS
+
+  website <http://sc68.atari.org>
+  project <https://sourceforge.net/p/sc68>

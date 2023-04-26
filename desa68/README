@@ -1,0 +1,34 @@
+                desa68 - a 68000 disassembler library
+
+                  desa68 is part of the sc68 project
+
+                    (C) 1998-2016 Benjamin Gerard
+
+
+ABOUT DESA68
+
+  desa68 project is a tiny "C" library to disassemble 68000 code with
+  extended support to help building a sourcer.
+
+  * Produce Motorola dialect (syntax).
+
+  * Does not support extended instruction for 68020 or later CPUs.
+
+  * Lower/upper case control.
+
+  * Allow symbolic disassembly (automatic symbol or callback).
+
+  * Extended information on the disassembled instruction allows to use
+    the library efficiently for sourcing 68000 code. The sourcer68
+    project uses desa68 to that effect.
+
+
+AUTHOR
+
+  Benjamin Gerard AKA Ben/OVR <https://sourceforge.net/users/benjihan>
+
+
+LINKS
+
+  website <http://sc68.atari.org>
+  project <https://sourceforge.net/p/sc68>

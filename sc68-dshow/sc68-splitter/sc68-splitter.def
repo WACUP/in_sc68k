@@ -1,0 +1,6 @@
+LIBRARY	sc68-splitter.dll
+EXPORTS 
+	DllGetClassObject	PRIVATE 
+	DllCanUnloadNow		PRIVATE 
+	DllRegisterServer	PRIVATE 
+	DllUnregisterServer	PRIVATE
