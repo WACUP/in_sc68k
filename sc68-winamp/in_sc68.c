@@ -347,6 +347,8 @@ static
  ****************************************************************************/
 void config(HWND hwnd)
 {
+  create_sc68();
+
   if (!config_dialog(DLGHINST, hwnd)) {
     // only save out if there's changes
     lock();
