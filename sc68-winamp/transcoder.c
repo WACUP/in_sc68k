@@ -44,10 +44,11 @@
 #include <windows.h>
 
 /* winamp */
+#define THE_INPUT_PLAYBACK_GUID
 #include "winamp/in2.h"
 
 /* in_sc68.c */
-EXTERN In_Module g_mod;
+EXTERN In_Module plugin;
 EXTERN HMODULE g_cfgdll;
 
 /* tracksel.c */
@@ -59,12 +60,6 @@ struct transcon {
   int allin1;                           /* 1:all tracks at once        */
   size_t pcm;                           /* pcm counter                 */
 };
-
-static int get_track_from_uri(const char * uri)
-{
-  /* $$$ TODO: this function ! */
-  return 0;
-}
 
 EXPORT
 /**
@@ -83,6 +78,9 @@ intptr_t winampGetExtendedRead_open(
 {
   struct transcon * trc;
   int res, ms, tracks, track, asid = 0;
+  char * filename = 0;
+
+  create_sc68();
 
   DBG("(\"%s\")\n", uri);
 
@@ -94,7 +92,8 @@ intptr_t winampGetExtendedRead_open(
   trc->sc68 = sc68_create(0);
   if (!trc->sc68)
     goto error;
-  if (sc68_load_uri(trc->sc68, uri))
+  track = extract_track_from_uri(uri, &filename);
+  if (sc68_load_uri(trc->sc68, filename/*/uri/**/))
     goto error;
   if (tracks = sc68_cntl(trc->sc68,SC68_GET_TRACKS), tracks <= 0)
     goto error;
@@ -103,11 +102,16 @@ intptr_t winampGetExtendedRead_open(
     DBG("only the one track and can't aSID, no need for a dialiog\n");
     track = 1;
   } else {
-    track = get_track_from_uri(uri);
+    // dro change to be done earlier & ensure we've got
+    // the correct filename to be using for any lookups
+    //track = extract_track_from_uri(uri, &filename);
     if (track < 1 || track > tracks) {
       sc68_disk_t disk = 0;
       if (!sc68_cntl(trc->sc68,SC68_GET_DISK,&disk)) {
-        track = tracksel_dialog(DLGHINST, DLGHWND, disk);
+        // dro change to no longer prompt for this & if a
+        // non-track specified file is provided then it's
+        // easier to just assume providing all track data
+        //track = tracksel_dialog(DLGHINST, DLGHWND, disk);
         if (track >= 0) {
           asid = (track >> 8) & 3;
           track &= 255;
@@ -147,6 +151,8 @@ intptr_t winampGetExtendedRead_open(
   *spr = sc68_cntl(trc->sc68, SC68_GET_SPR);
   *bps = 16;
   *siz = (int) ((uint64_t)ms * (*spr) / 1000) << 2;
+  if (filename)
+    free(filename);
   return (intptr_t)trc;
 
 error:
@@ -154,6 +160,10 @@ error:
     sc68_destroy(trc->sc68);
     free(trc);
   }
+
+  if (filename)
+    free(filename);
+
   DBG("=> FAILED\n");
   return 0;
 }
@@ -191,6 +201,13 @@ intptr_t winampGetExtendedRead_getData(
   pcm <<= 2;
 error:
   return pcm;
+}
+
+EXPORT
+int winampGetExtendedRead_setTime(intptr_t handle, int time_in_ms)
+{
+    // TODO if seek support is implemented
+    return 0;
 }
 
 EXPORT

@@ -1,0 +1,11 @@
+LIBRARY	"in_sc68k"
+EXPORTS
+winampGetInModule2 @1
+winampGetExtendedFileInfo @2
+winampUseUnifiedFileInfoDlg @3
+winampGetExtendedRead_close @4
+winampGetExtendedRead_getData @5
+winampGetExtendedRead_open @6
+winampGetExtendedRead_setTime @7
+winampUninstallPlugin @8
+GetSubSongInfo @13 NONAME

@@ -132,8 +132,8 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\libsc68\api68.c" />
-    <ClCompile Include="..\..\libsc68\conf68.c" />
+    <ClCompile Include="..\..\libsc68\src\api68.c" />
+    <ClCompile Include="..\..\libsc68\src\conf68.c" />
     <ClCompile Include="..\..\libsc68\dial68\dial68.c" />
     <ClCompile Include="..\..\libsc68\dial68\dial_conf.c" />
     <ClCompile Include="..\..\libsc68\dial68\dial_finf.c" />
@@ -161,8 +161,8 @@
     <ClCompile Include="..\..\libsc68\io68\ym_envel.c" />
     <ClCompile Include="..\..\libsc68\io68\ym_io.c" />
     <ClCompile Include="..\..\libsc68\io68\ym_puls.c" />
-    <ClCompile Include="..\..\libsc68\libsc68.c" />
-    <ClCompile Include="..\..\libsc68\mixer68.c" />
+    <ClCompile Include="..\..\libsc68\src\libsc68.c" />
+    <ClCompile Include="..\..\libsc68\src\mixer68.c" />
     <ClCompile Include="..\..\sc68-libc\basename.c" />
   </ItemGroup>
   <ItemGroup>

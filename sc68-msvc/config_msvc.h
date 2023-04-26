@@ -3,8 +3,8 @@
 #ifndef inline
 # define inline __inline
 #endif
-#define snprintf _snprintf
-#define strcasecmp stricmp
+//#define snprintf _snprintf
+#define strcasecmp _stricmp
 
 #undef HAVE_DECLSPEC
 
@@ -28,7 +28,7 @@
 #undef  HAVE_UNISTD_H
 
 /* functions */
-#define HAVE_GETENV 1
+//#define HAVE_GETENV 1
 #define HAVE_FREE 1
 #define HAVE_MALLOC 1
 #undef HAVE_BASENAME

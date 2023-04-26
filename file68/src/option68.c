@@ -393,8 +393,8 @@ int option68_append(option68_t * options, int n)
       assert(!"invalid option type"); break;
     }
 
-    opt->prefix_len = opt->prefix ? strlen(opt->prefix) : 0;
-    opt->name_len   = strlen(opt->name);
+    opt->prefix_len = opt->prefix ? (int)strlen(opt->prefix) : 0;
+    opt->name_len   = (int)strlen(opt->name);
     opt->next       = opts;
     opts = opt;
 

@@ -93,7 +93,7 @@ char * strcat68(char * a, const char * b, int l)
     return 0;
   if (!b)
     return a;
-  for (n = strlen(a); n < l && *b; n++, b++)
+  for (n = (int)strlen(a); n < l && *b; n++, b++)
     a[n] = *b;
   if (n < l)
     a[n] = 0;
@@ -106,7 +106,7 @@ char * strdup68(const char * s)
   char * d = 0;
 
   if (s) {
-    int len = strlen(s) + 1;
+    int len = (int)strlen(s) + 1;
 
     d = malloc(len);
     if (d) {
@@ -127,7 +127,7 @@ char * strcatdup68(const char * a, const char * b)
   } else if (!b) {
     return strdup68(a);
   } else {
-    int lena = strlen(a), lenb = strlen(b);
+    int lena = (int)strlen(a), lenb = (int)strlen(b);
     char * d = malloc(lena+lenb+1);
     if (d) {
       int i = 0;

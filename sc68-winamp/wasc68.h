@@ -59,7 +59,7 @@
  * the original value can be found in the configure.ac file.
  */
 #ifndef PACKAGE_VERSION
-# define PACKAGE_VERSION "0.5"
+# define PACKAGE_VERSION "1.0"
 #endif
 
 #include "sc68/sc68.h"
@@ -69,9 +69,13 @@ EXTERN int set_asid(int asid);
 EXTERN int save_config(void);
 EXTERN sc68_t * sc68_lock(void);
 EXTERN void sc68_unlock(sc68_t *);
+EXTERN void create_sc68(void);
 
 /* dll.c */
-EXTERN int g_useufi, g_usehook;
+#if 0
+EXTERN int g_useufi;
+EXTERN int g_usehook;
+#endif
 
 /* dbg.c */
 #include <stdarg.h>
@@ -93,7 +97,10 @@ EXTERN void  wasc68_cache_kill(void);
 EXTERN void* wasc68_cache_get(const char * uri);
 EXTERN void  wasc68_cache_release(void * disk, int dont_keep);
 
-#define DLGHWND  g_mod.hMainWindow
-#define DLGHINST g_mod.hDllInstance
+/* transcoder.c */
+EXTERN int extract_track_from_uri(const char * uri, char ** filename);
+
+#define DLGHWND  plugin.hMainWindow
+#define DLGHINST plugin.hDllInstance
 
 #endif

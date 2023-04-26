@@ -62,6 +62,7 @@ typedef struct {
 #define TD  TDB_TD
 #define NA  0
 
+#pragma component(browser, off, references)
 static dbentry_t db[] = {
 # include "timedb.inc.h"
   /* Add a bit of Supplemental empty space */
@@ -74,6 +75,7 @@ static dbentry_t db[] = {
   E_EMPTY,E_EMPTY,E_EMPTY,E_EMPTY,E_EMPTY,E_EMPTY,E_EMPTY,E_EMPTY,
   E_EMPTY,E_EMPTY,E_EMPTY,E_EMPTY,E_EMPTY,E_EMPTY,E_EMPTY,E_EMPTY,
 };
+#pragma component(browser, on, references)
 # define DB_MAX   (sizeof(db)/sizeof(*db))
 # define DB_COUNT DB_MAX-64
 # define DB_SORT  1
@@ -132,7 +134,7 @@ int timedb68_add(int hash, int track, unsigned int frames, int flags)
   }
   if (s)
     *s = e;
-  return s - db;
+  return (int)(s - db);
 }
 
 int timedb68_get(int hash, int track, unsigned int * frames, int * flags)
@@ -144,7 +146,7 @@ int timedb68_get(int hash, int track, unsigned int * frames, int * flags)
   if (s) {
     if (frames) *frames = s->frames;
     if (flags)  *flags  = s->flags;
-    return s - db;
+    return (int)(s - db);
   }
   return -1;
 }

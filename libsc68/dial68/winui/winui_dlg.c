@@ -33,6 +33,10 @@
 /* stdc */
 #include <assert.h>
 
+#define WA_UTILS_SIMPLE
+#include <windows.h>
+#include <loader/loader/utils.h>
+
 /* Used to glue the Windows resource into the library (using partial linking)
  * see <https://sourceware.org/bugzilla/show_bug.cgi?id=17196>
  */
@@ -136,8 +140,10 @@ struct dialog_s {
 /* Forward declarations. */
 
 static int  init_config(dialog_t *);
+#if 0
 static int  init_fileinfo(dialog_t *);
 static int  init_trackselect(dialog_t *);
+#endif
 static void kill_dialog(dialog_t *);
 static dialog_t * new_dialog(void *, dlgmsg_f, dialflag_t *);
 static inline int isdial(dialog_t * dial) {
@@ -210,14 +216,14 @@ static int dial_maxi(dialog_t * dial, const char * key, sc68_dialval_t * v)
 # define IDD_SEL IDC_STATIC
 #endif
 
-static dlgdef_t dlgdef[3] = {
+static dlgdef_t dlgdef[1/*/3/**/] = {
   { "config",      IDD_CFG, "sc68-conf", init_config      },
-  { "fileinfo",    IDD_INF, "sc68-finf", init_fileinfo    },
-  { "trackselect", IDD_SEL, "sc68-tsel", init_trackselect },
+  //{ "fileinfo",    IDD_INF, "sc68-finf", init_fileinfo    },
+  //{ "trackselect", IDD_SEL, "sc68-tsel", init_trackselect },
 };
 
 enum {
-  IID_CONFIG = 0, IID_FILEINFO, IID_TRACKSELECT
+  IID_CONFIG = 0, /*IID_FILEINFO, IID_TRACKSELECT*/
 };
 
 static intptr_t CALLBACK DialogProc(HWND,UINT,WPARAM,LPARAM);
@@ -380,19 +386,19 @@ static void SetVisible(HWND hdlg, int id, int visible)
 
 static inline int SetComboPos(HWND hdlg, int idc, int pos)
 {
-  pos = SendDlgItemMessageA(hdlg, idc, CB_SETCURSEL, pos, 0);
+  pos = (int)SendDlgItemMessageA(hdlg, idc, CB_SETCURSEL, pos, 0);
   return pos == CB_ERR ? -1 : pos;
 }
 
 static inline int GetComboPos(HWND hdlg, int idc)
 {
-  int pos = SendDlgItemMessageA(hdlg, idc, CB_GETCURSEL, 0, 0);
+  const int pos = (int)SendDlgItemMessageA(hdlg, idc, CB_GETCURSEL, 0, 0);
   return pos == CB_ERR ? -1 : pos;
 }
 
 static inline int GetSlidePos(HWND hdlg, int idc)
 {
-  return SendDlgItemMessageA(hdlg, idc, TBM_GETPOS, 0, 0);
+  return (int)SendDlgItemMessageA(hdlg, idc, TBM_GETPOS, 0, 0);
 }
 
 #if 0
@@ -516,7 +522,7 @@ static int init_combo(dialog_t * dial, int idc, const char * key)
 static int return_combo(dialog_t * dial, int idc, const char * key)
 {
   sc68_dialval_t v;
-  v.i = SendDlgItemMessageA(dial->hdlg, idc, CB_GETCURSEL,0,0);
+  v.i = (int)SendDlgItemMessageA(dial->hdlg, idc, CB_GETCURSEL,0,0);
   if (v.i >= 0) {
     DBG("%s(%d,%s) -> %d\n", __FUNCTION__, idc, key, v.i);
     return dial_seti(dial, key, &v);
@@ -606,7 +612,7 @@ static int return_spin(dialog_t * dial, int idc, const char * key)
 {
   sc68_dialval_t v;
   BOOL failed = FALSE;
-  v.i = SendDlgItemMessageA(dial->hdlg,idc,UDM_GETPOS32,0,(LPARAM)&failed);
+  v.i = (int)SendDlgItemMessageA(dial->hdlg,idc,UDM_GETPOS32,0,(LPARAM)&failed);
   if (!failed) {
     DBG("%s(%d,%s) -> %d\n", __FUNCTION__, idc, key, v.i);
     return dial_seti(dial, key, &v);
@@ -639,8 +645,10 @@ static int init_config(dialog_t * dial)
   res |= init_check(dial,IDC_CFG_AGAFILTER, "amiga-filter");
   res |= init_slide(dial,IDC_CFG_AGABLEND,  "amiga-blend", IDC_STATIC, 0, 3);
   res |= init_spin(dial, IDC_CFG_TIMESPIN,  "default-time", IDC_CFG_DEFTIME);
+#if 0
   res |= init_check(dial,IDC_CFG_UFI,       "ufi");
   res |= init_check(dial,IDC_CFG_HOOK,      "hook");
+#endif
   return res;
 }
 
@@ -662,8 +670,10 @@ static int return_config(dialog_t * dial)
   res |= return_check(dial,IDC_CFG_AGAFILTER, "amiga-filter");
   res |= return_slide(dial,IDC_CFG_AGABLEND,  "amiga-blend");
   res |= return_spin(dial, IDC_CFG_TIMESPIN,  "default-time");
+#if 0
   res |= return_check(dial,IDC_CFG_UFI,       "ufi");
   res |= return_check(dial,IDC_CFG_HOOK,      "hook");
+#endif
 
   if (res >= 0) {
     sc68_dialval_t v;
@@ -676,6 +686,7 @@ static int return_config(dialog_t * dial)
   return dial->retval = res<0 ? -3 : 0;
 }
 
+#if 0
 static int update_fileinfo(dialog_t * dial, int what)
 {
   int res = 0;
@@ -781,6 +792,7 @@ static int return_tracksel(dialog_t * dial)
       sel_remember.set?"On":"Off", sel_remember.track, sel_remember.asid);
   return dial->retval;
 }
+#endif
 
 static int dialog_borderless(dialog_t * dial)
 {
@@ -869,6 +881,7 @@ static intptr_t CALLBACK DialogProc(
   switch (umsg) {
 
   case WM_INITDIALOG:
+    DarkModeSetup(hdlg);
     DBG("%s() -- WM_INITDIALOG:\n", __FUNCTION__);
     dial = (dialog_t *) lparam;
     if (!isdial(dial))  {
@@ -953,11 +966,11 @@ static intptr_t CALLBACK DialogProc(
 
     case IDOK:
       switch (dial->iid) {
-
+#if 0
         /* OK on trackselect */
       case IID_TRACKSELECT:
         return_tracksel(dial); break;
-
+#endif
         /* OK on config */
       case IID_CONFIG:
         return_config(dial); break;
@@ -973,9 +986,10 @@ static intptr_t CALLBACK DialogProc(
       PostMessage(hdlg, WM_CLOSE, 0, 0);
       return TRUE;
 
+#if 0
     case IDC_SEL_ASID:
     case IDC_CFG_ASID:
-      v.i = SendMessageA(hwndCtl, CB_GETCURSEL, 0, 0);
+      v.i = (int)SendMessageA(hwndCtl, CB_GETCURSEL, 0, 0);
       if (v.i >= 0 && v.i < 3) {
         dial_seti(dial, "asid", &v);
         if (wID == IDC_CFG_ASID)
@@ -989,7 +1003,7 @@ static intptr_t CALLBACK DialogProc(
     case IDC_SEL_TRACK:
     case IDC_INF_TRACK:
       if (HIWORD(wparam) == CBN_SELCHANGE) {
-        v.i = SendMessageA(hwndCtl,CB_GETCURSEL,0,0);
+        v.i = (int)SendMessageA(hwndCtl,CB_GETCURSEL,0,0);
         if (v.i != CB_ERR) {
           dial_seti(dial, "track", &v);
           if (wID == IDC_INF_TRACK) {
@@ -1006,6 +1020,7 @@ static intptr_t CALLBACK DialogProc(
       if (HIWORD(wparam) == CBN_SELCHANGE)
         update_fileinfo(dial,2);
       return TRUE;
+#endif
 
     case IDC_CFG_SPR:
       update_spr(dial);
@@ -1307,8 +1322,8 @@ int dial68_frontend(void * data, sc68_dial_f cntl)
       flags.measuring = !!v.i;
 
     ret = (flags.modal || flags.measuring)
-      ? dialog_modal(data,cntl,&flags)
-      : dialog_modless(data,cntl,&flags);
+      ? (int)dialog_modal(data,cntl,&flags)
+      : (int)dialog_modless(data,cntl,&flags);
 
     /* ignoring flags.hasfailed ? */
   }

@@ -36,7 +36,7 @@
 int error68_va(const char * fmt, va_list list)
 {
   if (fmt) {
-    int len = strlen(fmt);
+    int len = (int)strlen(fmt);
     msg68_va(msg68_ERROR, fmt, list);
     if (len > 0 && fmt[len-1] != '\n') {
       msg68(msg68_ERROR,"\n");
@@ -48,7 +48,7 @@ int error68_va(const char * fmt, va_list list)
 int error68x_va(void * cookie, const char * fmt, va_list list)
 {
   if (fmt) {
-    int len = strlen(fmt);
+    int len = (int)strlen(fmt);
     msg68x_va(msg68_ERROR, cookie, fmt, list);
     if (len > 0 && fmt[len-1] != '\n') {
       msg68x(msg68_ERROR, cookie, "\n");

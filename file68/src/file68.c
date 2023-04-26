@@ -558,7 +558,7 @@ static inline int is_aka_char(int c) {
 /* match ".+ ([^)]+)$" */
 static int has_parenthesis(char * name, char ** sptr, char ** eptr)
 {
-  int i, l = strlen(name);
+  int i, l = (int)strlen(name);
 
   if (l < 5 || name[l-1] != ')')
     return 0;
@@ -1841,7 +1841,7 @@ static int save_string(vfs68_t * os,
 {
   int len;
 
-  if (!str || !(len = strlen(str))) {
+  if (!str || !(len = (int)strlen(str))) {
     return 0;
   }
   return save_chunk(os, chunk, str, len + 1);
@@ -1865,7 +1865,7 @@ static int save_differstr(vfs68_t * os,
       || (oldstr && !strcmp(oldstr, str))) {
     return 0;
   }
-  len = strlen(str);
+  len = (int)strlen(str);
   return !len ? 0 :save_chunk(os, chunk, str, len + 1);
 }
 
@@ -1916,8 +1916,8 @@ static int save_tags(vfs68_t *os, const tagset68_t * tags,
         continue;
     }
 
-    if (tags->array[i].key && (keylen = strlen(tags->array[i].key)) &&
-        tags->array[i].val && (vallen = strlen(tags->array[i].val))) {
+    if (tags->array[i].key && (keylen = (int)strlen(tags->array[i].key)) &&
+        tags->array[i].val && (vallen = (int)strlen(tags->array[i].val))) {
       int len = keylen + vallen + 2;
       if (len > max) {
         char * new = realloc(tmp, len);

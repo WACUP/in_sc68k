@@ -32,14 +32,15 @@
 #include <windows.h>
 
 /* winamp 2 */
+#define THE_INPUT_PLAYBACK_GUID
 #include "winamp/in2.h"
 
-EXTERN In_Module g_mod;
+EXTERN In_Module plugin;
 
 EXPORT
 In_Module *winampGetInModule2()
 {
-  return &g_mod;
+  return &plugin;
 }
 
 /**
@@ -51,8 +52,12 @@ In_Module *winampGetInModule2()
 EXPORT
 int winampUseUnifiedFileInfoDlg(const char * fn)
 {
+#if 0
   DBG("winampUseUnifiedFileInfoDlg -> %d\n", g_useufi);
-  return !g_mod.InfoBox || g_useufi > 0;
+  return !plugin.InfoBox || g_useufi > 0;
+#else
+  return 1;
+#endif
 }
 
 /**

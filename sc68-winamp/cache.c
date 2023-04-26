@@ -168,7 +168,7 @@ void * wasc68_cache_get(const char * uri)
           sc68_disk_free(g_cache.e[i].disk);
           g_cache.e[i].disk = 0;
           g_cache.e[i].uri = 0;
-          g_cache.e[i].uri = strdup(uri);
+          g_cache.e[i].uri = _strdup(uri);
           if (g_cache.e[i].uri) {
             g_cache.e[i].ref  = 1;
             g_cache.e[i].disk = disk;

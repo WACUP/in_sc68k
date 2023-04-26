@@ -140,7 +140,7 @@ static int isf_flush_output_buffer(vfs68_z_t * isf)
 {
   int n, w;
 
-  w = n = isf->c_stream.next_out - isf->buffer_out;
+  w = n = (int)(isf->c_stream.next_out - isf->buffer_out);
   /*   TRACE68(zlib_cat," FLUSH:%d",n); */
   if (n > 0) {
     w = vfs68_write(isf->is, isf->buffer_out, n);
@@ -273,7 +273,7 @@ static int isf_write_gz_header(vfs68_z_t * isf)
     s2 = strrchr(name,'\\');
     name = (s1 > name) ? s1+1 : name;
     name = (s2 > name) ? s2+1 : name;
-    len = strlen(name) + 1;
+    len = (int)strlen(name) + 1;
     if (vfs68_write(isf->is, name, len) != len) {
       return -1;
     }
@@ -428,7 +428,7 @@ static int isf_inflate_buffer(vfs68_z_t * isf)
 
   }
 
-  n = isf->c_stream.next_out - isf->buffer_out;
+  n = (int)(isf->c_stream.next_out - isf->buffer_out);
   if (isf->gzip) {
     isf->c_crc32 = crc32(isf->c_crc32, isf->buffer_out, n);
     /*     TRACE68(zlib_cat,"CRC32:%08X\n",isf->c_crc32); */
@@ -451,7 +451,7 @@ static int isf_deflate_buffer(vfs68_z_t * isf, int finish)
   zeof = (z_flush_mode != Z_FINISH);
 
   isf->c_stream.next_in = isf->buffer_in;
-  isf->c_stream.avail_in = isf->write_in - isf->buffer_in;
+  isf->c_stream.avail_in = (uInt)(isf->write_in - isf->buffer_in);
 
   /* Loop while there is data to compress ... */
   while (!zeof || isf->c_stream.avail_in) {
@@ -666,7 +666,7 @@ static int isf_read(vfs68_t * vfs, void * data, int n)
   for (bytes=n; bytes>0;) {
     int n;
 
-    n = isf->c_stream.next_out - isf->read_out;
+    n = (int)(isf->c_stream.next_out - isf->read_out);
 
     if (!n) {
       n = isf_inflate_buffer(isf);
@@ -704,7 +704,7 @@ static int isf_write(vfs68_t * vfs, const void * data, int n)
     int n;
 
     /* Get number of byte free in the input buffer. */
-    n = isf->buffer_in + sizeof(isf->buffer_in) - isf->write_in;
+    n = (int)(isf->buffer_in + sizeof(isf->buffer_in) - isf->write_in);
     if (!n) {
       /* No more bytes, it is time to compress and write some. */
       n = isf_deflate_buffer(isf,0);

@@ -190,7 +190,7 @@ static vfs68_t * null_create(const char * uri, int mode, int argc, va_list list)
   if (!null_ismine(uri))
     return 0;
 
-  size = sizeof(vfs68_null_t) + strlen(uri);
+  size = sizeof(vfs68_null_t) + (int)strlen(uri);
 
   isn = malloc(size);
   if (!isn) {

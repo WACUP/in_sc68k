@@ -367,7 +367,7 @@ static char * convert_music_path(char * newname, int max,
   char * ename = nname+max;
 
   /* Author */
-  len = copy_path(nname, ename - nname, name, 0, 0, '/');
+  len = copy_path(nname, (int)(ename - nname), name, 0, 0, '/');
   if (len <= 0) goto error;
   nname += len;
   name  += len;
@@ -376,9 +376,9 @@ static char * convert_music_path(char * newname, int max,
   c = (*name++) & 255;
 
   if (c == '0') {
-    len = copy_path(nname, ename - nname, "Atari ST/", 0, 0, 0);
+    len = copy_path(nname, (int)(ename - nname), "Atari ST/", 0, 0, 0);
   } else if (c == '1') {
-    len = copy_path(nname, ename - nname, "Amiga/", 0, 0, 0);
+    len = copy_path(nname, (int)(ename - nname), "Amiga/", 0, 0, 0);
   } else {
     len = -1;
   }
@@ -388,7 +388,7 @@ static char * convert_music_path(char * newname, int max,
   if (c != '/') goto error;
 
   /* Title */
-  len = copy_path(nname, ename - nname, name, 0, 0, '/');
+  len = copy_path(nname, (int)(ename - nname), name, 0, 0, '/');
   if (len <= 0) goto error;
   nname += len;
   name  += len;
@@ -581,10 +581,10 @@ static vfs68_t * default_open(rsc68_t type, const char *name,
     cext  = pathes[ipath].ext ? pathes[ipath].ext : ext;
 
     len = 1
-      + strlen(cpath)
-      + strlen(cdir)
-      + strlen(name)
-      + (cext ? strlen(cext) : 0);
+      + (int)strlen(cpath)
+      + (int)strlen(cdir)
+      + (int)strlen(name)
+      + (cext ? (int)strlen(cext) : 0);
 
     if (len <= alen) {
       path = apath;
@@ -609,14 +609,14 @@ static vfs68_t * default_open(rsc68_t type, const char *name,
       : cv_path_local;
 
     /* Build path. */
-    l = copy_path(p, pe-p, cpath, cv_path, 0 , 0);
+    l = copy_path(p, (int)(pe - p), cpath, cv_path, 0, 0);
     p += l;
-    l = copy_path(p, pe-p, cdir, cv_path, 0, 0);
+    l = copy_path(p, (int)(pe - p), cdir, cv_path, 0, 0);
     p += l;
-    l = copy_path(p, pe-p, name, cv_path, cv_extra, 0);
+    l = copy_path(p, (int)(pe - p), name, cv_path, cv_extra, 0);
     p += l;
     if (cext) {
-      l = copy_path(p, pe-p, cext, 0, 0 ,0);
+        l = copy_path(p, (int)(pe - p), cext, 0, 0, 0);
       p += l;
     }
 

@@ -1,6 +1,6 @@
 #include "config_msvc.h"
 
-#error need editing
+//#error need editing
 
 #define USE_REPLAY68 1
 /* debug facilities for file68 */
@@ -13,7 +13,7 @@
 //#define FILE68_CURL 1
 
 /* Defined if file68 supports !ice depacker (via unice68) */
-#define FILE68_UNICE68 1
+#define FILE68_UNICE68 "2.0.0.20230424"/*/1/**/
 
 /* Defined if file68 supports deflate (via zlib) */
 #define FILE68_Z 1
@@ -40,7 +40,7 @@
 /* #undef HAVE_FSYNC */
 
 /* Define to 1 if you have the `getenv' function. */
-#define HAVE_GETENV 1
+//#define HAVE_GETENV 1	// dro change
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
@@ -158,7 +158,7 @@
 //#define USE_CURL 1
 
 /* Using Windows registry */
-#define USE_REGISTRY68 1
+//#define USE_REGISTRY68 1
 
 /* Enable extensions on AIX 3, Interix.  */
 //#ifndef _ALL_SOURCE

@@ -48,10 +48,14 @@
 
 /* winamp 2 */
 #include "winamp/in2.h"
-#undef   _MSC_VER                       /* fix intptr_t redefinition */
-#define  _MSC_VER 2000
+//#undef   _MSC_VER                       /* fix intptr_t redefinition */
+//#define  _MSC_VER 2000
 #include "winamp/wa_ipc.h"
 #include "winamp/ipc_pe.h"
+#include <strsafe.h>
+#define WA_UTILS_SIMPLE
+#include <loader/loader/utils.h>
+#include <../wacup_version.h>
 
 #ifdef __cplusplus
 /* winamp 3 */
@@ -74,7 +78,10 @@ static char *argv[] = { appname };
  * Plugin private data.
  ****************************************************************************/
 
-int g_usehook = -1, g_useufi = -1;
+#if 0
+int g_usehook = -1;
+int g_useufi = -1;
+#endif
 
 #ifdef USE_LOCK
 static HANDLE        g_lock;       /* mutex handle           */
@@ -99,7 +106,7 @@ static volatile LONG g_stopreq;    /* stop requested         */
 static volatile LONG g_paused;     /* pause status           */
 static volatile LONG g_settrack;   /* request change track   */
 
-static BYTE          g_spl[576*8]; /* Sample buffer          */
+//static BYTE          g_spl[576*8]; /* Sample buffer          */
 
 /*****************************************************************************
  * Declaration
@@ -107,12 +114,13 @@ static BYTE          g_spl[576*8]; /* Sample buffer          */
 
 /* The decode thread */
 static DWORD WINAPI playloop(LPVOID b);
-static void init();
+static void GetFileExtensions(void);
+static int init();
 static void quit();
 static void config(HWND);
 static void about(HWND);
-static  int infobox(const char *, HWND);
-static  int isourfile(const char *);
+static  int infobox(const in_char *, HWND);
+static  int isourfile(const in_char *);
 static void pause();
 static void unpause();
 static  int ispaused();
@@ -121,10 +129,9 @@ static  int getoutputtime();
 static void setoutputtime(int);
 static void setvolume(int);
 static void setpan(int);
-static  int play(const char *);
+static  int play(const in_char *);
 static void stop();
 static void getfileinfo(const in_char *, in_char *, int *);
-static void seteq(int, char *, int);
 
 EXTERN int fileinfo_dialog(HINSTANCE hinst, HWND hwnd, const char * uri);
 EXTERN int config_dialog(HINSTANCE hinst, HWND hwnd);
@@ -171,21 +178,20 @@ void sc68_unlock(sc68_t * sc68) {
     unlock();
 }
 
+
 /* static */
 /*****************************************************************************
  * THE INPUT MODULE
  ****************************************************************************/
-In_Module g_mod =
+In_Module plugin =
 {
-  IN_VER,               /* Input plugin version as defined in in2.h */
+  IN_VER_WACUP,               /* Input plugin version as defined in in2.h */
   (char*)
   "sc68 (Atari ST & Amiga music) v" PACKAGE_VERSION, /* Description */
   0,                          /* hMainWindow (filled in by winamp)  */
   0,                          /* hDllInstance (filled in by winamp) */
-  (char*)
-  "sc68\0" "sc68 file (*.sc68)\0"
-  "snd\0" "sndh file (*.snd)\0" "sndh\0" "sndh file (*.sndh)\0",
-  0,                                  /* is_seekable */
+  NULL,                       /* filled in by GetFileExtensions later */
+  0,                          /* is_seekable */ // TODO
   1,                                  /* uses output plug-in system */
 
   config,
@@ -210,15 +216,34 @@ In_Module g_mod =
 
   0,0,0,0,0,0,0,0,0,     /* visualization calls filled in by winamp */
   0,0,                   /* dsp calls filled in by winamp */
-  seteq,                 /* set equalizer */
+  NULL,                  /* set equalizer */
   NULL,                  /* setinfo call filled in by winamp */
-   0                      /* out_mod filled in by winamp */
+  0,                     /* out_mod filled in by winamp */
+  NULL,	// api_service
+  INPUT_HAS_READ_META | INPUT_USES_UNIFIED_ALT3 |
+  INPUT_HAS_FORMAT_CONVERSION_LEGACY/* |
+  INPUT_HAS_FORMAT_CONVERSION_SET_TIME_MODE*/,
+  GetFileExtensions,	// loading optimisation
+  IN_INIT_WACUP_END_STRUCT
 };
+
+static void GetFileExtensions(void)
+{
+    static int loaded_extensions;
+    if (!loaded_extensions)
+    {
+        // TODO localise
+        plugin.FileExtensions = (char*)L"SC68;SC68.GZ\0sc68 File (*.SC68;*.SC68.GZ)\0"
+                                              L"SND;SNDH\0sndh File (*.SND;*.SNDH)\0";
+        loaded_extensions = 1;
+    }
+}
 
 /*****************************************************************************
  * Message Hook
  ****************************************************************************/
 
+#if 0
 /* Process winamp main window messages */
 static LRESULT mwproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
@@ -278,7 +303,7 @@ static LRESULT mwproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 static
 LRESULT CALLBACK myproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-  if (hWnd == g_mod.hMainWindow)
+  if (hWnd == plugin.hMainWindow)
     return mwproc(hWnd, Msg, wParam, lParam);
   else {
     assert(!"unexpected window handler in my hook");
@@ -290,12 +315,12 @@ static void mw_hook(void)
 {
   if (g_usehook) {
     if (!g_mwhkproc) {
-      const HWND hwnd = g_mod.hMainWindow;
+      const HWND hwnd = plugin.hMainWindow;
       char name[512];
       if (GetClassName(hwnd, name, sizeof(name)) <= 0)
         strcpy(name,"<no-name>");
       g_mwhkproc = (WNDPROC)
-        SetWindowLong(hwnd, GWL_WNDPROC, (LONG)myproc);
+        SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)myproc);
       DBG("hook winamp main window #%08x \"%s\" -- %s (%08x)\n",
           (unsigned) hwnd, name,
           !g_mwhkproc?"failed":"success", (unsigned)g_mwhkproc);
@@ -310,10 +335,11 @@ static void mw_unhook(void)
     DBG("winamp main window not hooked\n");
   else {
     DBG("unhook winamp main window\n");
-    SetWindowLong(g_mod.hMainWindow, GWL_WNDPROC, (LONG)g_mwhkproc);
+    SetWindowLongPtr(plugin.hMainWindow, GWLP_WNDPROC, (LONG_PTR)g_mwhkproc);
     g_mwhkproc = 0;
   }
 }
+#endif
 
 static
 /*****************************************************************************
@@ -321,7 +347,12 @@ static
  ****************************************************************************/
 void config(HWND hwnd)
 {
-  config_dialog(DLGHINST, hwnd);
+  if (!config_dialog(DLGHINST, hwnd)) {
+    // only save out if there's changes
+    lock();
+    sc68_cntl(0, SC68_CONFIG_SAVE);
+    unlock();
+  }
 }
 
 static
@@ -330,33 +361,31 @@ static
  ****************************************************************************/
 void about(HWND hwnd)
 {
-  char temp[512];
-  snprintf(temp,sizeof(temp),
-           "sc68 for winamp\n"
-           "Atari ST and Amiga music player\n"
-           "using %s and %s"
+  wchar_t message[512] = { 0 };
+  _snwprintf(message, ARRAYSIZE(message),
+             L"%s\n\nsc68 (Atari ST & Amiga) player built\nusing "
+             L"%hs & %hs\n© 1998-2016 Benjamin Gerard\n"
 #ifdef DEBUG
-           "\n" " !!! DEBUG Build !!! "
+             L"\n" " !!! DEBUG Build !!! "
 #endif
-#ifndef NDEBUG
-           "\n" "buid on " __DATE__
-#endif
-           "\n(c) 1998-2015 Benjamin Gerard",
-           sc68_versionstr(),file68_versionstr());
+             L"\nWACUP related modifications by\nDarren "
+             L"Owen aka DrO (%hs)\n\nBuild date: %hs",
+             (wchar_t*)plugin.description,
+             sc68_versionstr(), file68_versionstr(),
+             WACUP_COPYRIGHT, __DATE__);
 
-  MessageBox(hwnd,
-             temp,
-             "About sc68 for winamp",
-             MB_OK);
+  AboutMessageBox(hwnd, message, L"sc68 (Atari ST & Amiga) Player");
 }
 
 static
 /*****************************************************************************
  * INFO DIALOG
  ****************************************************************************/
-int infobox(const char * uri, HWND hwnd)
+int infobox(const in_char *uri, HWND hwnd)
 {
+#if 0
   fileinfo_dialog(DLGHINST, hwnd, uri);
+#endif
   return INFOBOX_UNCHANGED;
 }
 
@@ -364,26 +393,34 @@ static
 /*****************************************************************************
  * FILE DETECTION
  ****************************************************************************/
-int isourfile(const char * uri)
+int isourfile(const in_char * file)
 {
+  int ret = 0;
+  if (file && *file) {
+    // to save doing some of the things with making
+    // the plug-in fully unicode for now this'll do
+    // just enough to get a valid extension to use
+    const wchar_t *uri = (LPCWSTR)file;
   if (uri && *uri) {
-    if (!strncmp68(uri,"sc68:",5))
-      return 1;
+      if (SameStrN(uri,L"sc68:",5))
+        ret = 1;
     else {
-      const char * ext = strrchr(uri,'.');
-      if (ext &&
-          (0
-           || !strcmp68(ext,".sc68")
+        const wchar_t * ext = GetPathExtension(uri);
+        if (ext && *ext) ++ext; // skip over the .
+        if (ext && *ext &&
+            (
+                SameStrN(ext, L"sndh", 4)
+                || SameStrN(ext, L"snd", 3)
 #ifdef FILE68_Z
-           || !strcmp68(ext,".sc68.gz")
+                || SameStrN(ext, L"sc68.gz", 7)
 #endif
-           || !strcmp68(ext,".snd")
-           || !strcmp68(ext,".sndh")
+                || SameStrN(ext, L"sc68", 4)
             ))
-        return 1;
+          ret = 1;
     }
   }
-  return 0;
+  }
+  return ret;
 }
 
 /*****************************************************************************
@@ -391,12 +428,12 @@ int isourfile(const char * uri)
  ****************************************************************************/
 static void pause() {
   atomic_set(&g_paused,1);
-  g_mod.outMod->Pause(1);
+  plugin.outMod->Pause(1);
 }
 
 static void unpause() {
   atomic_set(&g_paused,0);
-  g_mod.outMod->Pause(0);
+  plugin.outMod->Pause(0);
 }
 
 static int ispaused() {
@@ -428,7 +465,7 @@ int getoutputtime()
 {
   int ms = 0;
   if (lock()) {
-    ms = g_trackpos + g_mod.outMod->GetOutputTime();
+    ms = g_trackpos + plugin.outMod->GetOutputTime();
     unlock();
   }
   return ms;
@@ -443,6 +480,8 @@ void setoutputtime(int ms)
 /* Not supported ATM.
  * It has to signal the play thread it has to seek.
  */
+  // SC68_SET_POS seems to be what'd be needed but
+  // there's no sign of that being implemented :'(
 }
 
 static
@@ -451,7 +490,7 @@ static
  ****************************************************************************/
 void setvolume(int volume)
 {
-  g_mod.outMod->SetVolume(volume);
+  plugin.outMod->SetVolume(volume);
 }
 
 static
@@ -460,15 +499,8 @@ static
  ****************************************************************************/
 void setpan(int pan)
 {
-  g_mod.outMod->SetPan(pan);
+  plugin.outMod->SetPan(pan);
 }
-
-static
-/*****************************************************************************
- * SET EQUALIZER : Do nothing to ignore
- ****************************************************************************/
-void seteq(int on, char data[10], int preamp) {}
-
 
 static void clean_close(void)
 {
@@ -479,7 +511,9 @@ static void clean_close(void)
     DBG("%s\n","thread cleaned");
   }
   atomic_set(&g_playing,0);
+#if 0
   mw_unhook();
+#endif
   if (g_sc68) {
     sc68_destroy(g_sc68);
     g_sc68 = 0;
@@ -489,9 +523,9 @@ static void clean_close(void)
     g_uri = 0;
   }
   /* Close output system. */
-  g_mod.outMod->Close();
+  plugin.outMod->Close();
   /* Deinitialize visualization. */
-  g_mod.SAVSADeInit();
+  plugin.SAVSADeInit();
 }
 
 static
@@ -503,7 +537,7 @@ void stop()
   if (lock()) {
     atomic_set(&g_stopreq,1);
     if (g_thdl) {
-      switch (WaitForSingleObject(g_thdl,10000)) {
+      switch (WaitForSingleObjectEx(g_thdl,10000,TRUE)) {
       case WAIT_OBJECT_0:
         CloseHandle(g_thdl);
         g_thdl = 0;
@@ -517,11 +551,19 @@ void stop()
   }
 }
 
-static
-int track_from_uri(const char ** ptruri)
+int extract_track_from_uri(const char *uri, char **filename)
 {
-  int track = 0;
-  return track;
+  if (filename) {
+    *filename = ((uri && *uri) ? _strdup(uri) : NULL);
+    if (*filename) {
+      char* comma = strrchr(*filename, ',');
+      if (comma) {
+        *comma = 0;
+        return AStr2I((comma + 1));
+      }
+    }
+  }
+  return 0;
 }
 
 static
@@ -532,13 +574,15 @@ static
  * @reval  -1 on file not found
  * @retval !0 stopping winamp error
  ****************************************************************************/
-int play(const char * uri)
+int play(const in_char *uri)
 {
   int err = 1;
   int settrack = 0;
 
   if (!uri || !*uri)
     return -1;
+
+  create_sc68();
 
   if (!lock_noblock())
     goto cantlock;
@@ -560,13 +604,17 @@ int play(const char * uri)
   if (g_sc68 = sc68_create(0), !g_sc68)
     goto exit;
 
-  settrack = track_from_uri(&uri);
+  char* filename = 0;
+  settrack = extract_track_from_uri(uri, &filename);
   if (settrack) {
     DBG("got specific track -- %d\n", settrack);
   }
 
   /* Duplicate URI an */
-  if (g_uri = strdup(uri), !g_uri)
+  // wacup change so it uses what's been
+  // created when trying to extract the
+  // current track number for the file
+  if (g_uri = filename/*/uri/**/, !g_uri)
     goto exit;
 
   /* Load */
@@ -603,17 +651,17 @@ int play(const char * uri)
   g_track = sc68_cntl(g_sc68, SC68_GET_TRACK);
 
   /* Init output module */
-  g_maxlatency = g_mod.outMod->Open(g_spr, 2, 16, 0, 0);
+  g_maxlatency = plugin.outMod->Open(g_spr, 2, 16, 0, 0);
   if (g_maxlatency < 0)
     goto exit;
 
   /* set default volume */
-  g_mod.outMod->SetVolume(-666);
+  plugin.outMod->SetVolume(-666);
 
   /* Init info and visualization stuff */
-  g_mod.SetInfo(0, g_spr/1000, 2, 1);
-  g_mod.SAVSAInit(g_maxlatency, g_spr);
-  g_mod.VSASetInfo(g_spr, 2);
+  plugin.SetInfo(0, g_spr/1000, 2, 1);
+  plugin.SAVSAInit(g_maxlatency, g_spr);
+  plugin.VSASetInfo(g_spr, 2);
 
 
   /* Init play thread */
@@ -628,7 +676,9 @@ int play(const char * uri)
 
   if (err = !g_thdl, !err) {
     atomic_set(&g_playing,1);
+#if 0
     mw_hook();
+#endif
   }
 exit:
   if (err)
@@ -695,6 +745,8 @@ void getfileinfo(const in_char * uri, in_char * title, int * msptr)
   if (msptr)
     *msptr = 0;
 
+  create_sc68();
+
   if (!uri || !*uri) {
     /* current disk */
     if (lock()) {
@@ -718,15 +770,21 @@ static
  ****************************************************************************/
 DWORD WINAPI playloop(LPVOID cookie)
 {
+  BYTE spl[576 * 8] = { 0 };
   for (;;) {
     int settrack, n = 0, canwrite;
+
+    // TODO would be nice to find a way
+    //      to support SC68_SET_POS but
+    //      it very likely will require
+    //      brute forcing a fake 'seek'
 
     if (atomic_get(&g_stopreq)) {
       DBG("stop request detected\n");
       break;
     }
     settrack = atomic_set(&g_settrack,0);
-    canwrite = g_mod.outMod->CanWrite();
+    canwrite = plugin.outMod->CanWrite();
 
     if (settrack) {
       DBG("change track has been requested -- %02d\n", settrack);
@@ -734,9 +792,9 @@ DWORD WINAPI playloop(LPVOID cookie)
       sc68_play(g_sc68, settrack, SC68_DEF_LOOP);
       g_code = sc68_process(g_sc68, 0, 0);
       DBG("code=%x\n",g_code);
-    } else if (canwrite >= (576 << (2+!!g_mod.dsp_isactive()))) {
+    } else if (canwrite >= (576 << (2+!!plugin.dsp_isactive()))) {
       n = 576;
-      g_code = sc68_process(g_sc68, g_spl, &n);
+      g_code = sc68_process(g_sc68, spl, &n);
     } else {
       Sleep(20);                        /* wait a while */
       continue;
@@ -761,51 +819,58 @@ DWORD WINAPI playloop(LPVOID cookie)
     if (settrack) {
       g_trackpos = sc68_cntl(g_sc68, SC68_GET_ORG);
       DBG("flushing audio track pos: -- %d \n", g_trackpos);
-      g_mod.outMod->Flush(0);
+      plugin.outMod->Flush(0);
     }
 
     /* if (g_code & SC68_CHANGE) { */
-    /*   PostMessage(g_mod.hMainWindow,WM_WA_IPC,0,IPC_UPDTITLE); */
+    /*   PostMessage(plugin.hMainWindow,WM_WA_IPC,0,IPC_UPDTITLE); */
     /* } */
 
     /* Send audio data to output mod with optionnal DSP processing if
      * it is requested. */
     if (n > 0) {
       int l;
-      int vispos = g_trackpos + g_mod.outMod->GetOutputTime();
+      int vispos = g_trackpos + plugin.outMod->GetOutputTime();
 
       /* Give the samples to the vis subsystems */
-      g_mod.SAAddPCMData (g_spl, 2, 16, vispos);
-      g_mod.VSAAddPCMData(g_spl, 2, 16, vispos);
+      plugin.SAAddPCMData (spl, 2, 16, vispos);
+      plugin.VSAAddPCMData(spl, 2, 16, vispos);
 
       /* If we have a DSP plug-in, then call it on our samples */
       l = (
-        g_mod.dsp_isactive()
-        ? g_mod.dsp_dosamples((short *)g_spl, n, 16, 2, g_spr)
+        plugin.dsp_isactive()
+        ? plugin.dsp_dosamples((short *)spl, n, 16, 2, g_spr)
         : n ) << 2;
 
       /* Write the pcm data to the output system */
-      g_mod.outMod->Write((char*)g_spl, l);
+      plugin.outMod->Write((char*)spl, l);
     }
   }
   atomic_set(&g_playing,0);
 
   /* Wait buffered output to be processed */
   while (!atomic_get(&g_stopreq)) {
-    g_mod.outMod->CanWrite();           /* needed by some out mod */
-    if (!g_mod.outMod->IsPlaying()) {
+    plugin.outMod->CanWrite();           /* needed by some out mod */
+    if (!plugin.outMod->IsPlaying()) {
       /* Done playing: tell Winamp and quit the thread */
-      PostMessage(g_mod.hMainWindow, WM_WA_MPEG_EOF, 0, 0);
+      /*PostMessage(plugin.hMainWindow, WM_WA_MPEG_EOF, 0, 0);/*/
+      PostEOF(FALSE);/**/
       break;
     } else {
       Sleep(15);              // give a little CPU time back to the system.
     }
   }
 
+  if (g_thdl)
+  {
+    CloseHandle(g_thdl);
+    g_thdl = 0;
+  }
   DBG("exit with code -- %x\n", g_code);
   return 0;
 }
 
+#if 0
 static int onchange_ufi(const option68_t * opt, value68_t * val)
 {
   g_useufi = !!val->num;
@@ -817,21 +882,35 @@ static int onchange_hook(const option68_t * opt, value68_t * val)
   g_usehook = !!val->num;
   return 0;
 }
+#endif
 
 static
 /*****************************************************************************
  * PLUGIN INIT
  ****************************************************************************/
-void init()
+int init(void)
+{
+  // TODO setup localisation / plug-in names, etc
+  return IN_INIT_SUCCESS;
+}
+
+// instead of doing everything in init(..) it's
+// better especially when there's no certainty
+// of what format(s) a user might be playing to
+// only do the initialisation of things when it
+// is actually needed
+void create_sc68(void)
 {
   /* sc68 init */
-
+#if 0
   static option68_t opts[] = {
     OPT68_BOOL(0,"ufi", "winamp","Unified file info dialog",1,onchange_ufi),
     OPT68_BOOL(0,"hook","winamp","Hook prev/next track",    1,onchange_hook)
   };
+#endif
 
-  sc68_init_t init68;
+  static sc68_init_t init68;
+  if (!init68.argv) {
 #ifndef NDEBUG
   const int debug =
 #ifdef DEBUG
@@ -842,7 +921,7 @@ void init()
     ;
 #endif
 
-  memset(&init68,0,sizeof(init68));
+    //memset(&init68,0,sizeof(init68));
   init68.argv = argv;
   init68.argc = sizeof(argv) / sizeof(*argv);
 #ifndef NDEBUG
@@ -854,21 +933,23 @@ void init()
   wasc68_cat = msg68_NEVER;
   init68.debug_clr_mask = -1;
 #endif
-  init68.flags.no_load_config = 1;      /* disable config load */
+    //init68.flags.no_load_config = 1;      /* disable config load */
   sc68_init(&init68);
 
   /* sc68 winamp init */
+#if 0
   option68_append(opts, sizeof(opts)/sizeof(*opts));
   option68_iset(option68_get("ufi",opt68_ALWAYS),0,opt68_ALWAYS,opt68_CFG);
   option68_iset(option68_get("hook",opt68_ALWAYS),1,opt68_ALWAYS,opt68_CFG);
   sc68_cntl(0,SC68_CONFIG_LOAD);
+#endif
 
   /* clear and init private */
 #ifdef USE_LOCK
   g_lock = CreateMutex(NULL, FALSE, NULL);
 #endif
 
-  /* clear and init cacke */
+    /* clear and init cache */
   wasc68_cache_init();
 
   /* Hook messages */
@@ -878,7 +959,7 @@ void init()
   /* Get WASABI service */
   if (!g_service) {
     g_service = (api_service *)
-      SendMessage(g_mod.hMainWindow,WM_WA_IPC,0,IPC_GET_API_SERVICE);
+        SendMessage(plugin.hMainWindow,WM_WA_IPC,0,IPC_GET_API_SERVICE);
     if (g_service == (api_service *)1)
       g_service = 0;
   }
@@ -971,11 +1052,10 @@ void init()
       DBG("don't have service memman lang\n");
     }
     //if (sf) WASABI_API_LNG = reinterpret_cast<api_language*>(sf->getInterface());
-
   }
 #endif
-
   DBG("init completed\n");
+}
 }
 
 static
@@ -985,11 +1065,16 @@ static
 void quit()
 {
   DBG("\n");
+#if 0
   mw_unhook();
-
-  lock();
+#endif
+  // no need to be doing this as closing
+  // the config dialog will trigger it &
+  // avoids generating a file unless its
+  // actually needed (e.g. load + close)
+  /*lock();
   sc68_cntl(0,SC68_CONFIG_SAVE);
-  unlock();
+  unlock();*/
 #ifdef USE_LOCK
   CloseHandle(g_lock);
   g_lock = 0;
@@ -1005,18 +1090,7 @@ static int xinfo(const char *data, char *dest, size_t destlen,
 {
   sc68_music_info_t tmpmi, * const mi = &tmpmi;
   const char * value = 0;
-
-  if (!strcasecmp(data, "type")) {
-    /* "TYPE" is an important value as it tells Winamp if this is an
-     * audio or video format */
-    value = "0";
-  }
-  else if (!strcasecmp(data,"family")) {
-    value = "sc68 audio files";
-  /* Get the info for the default track only. */
-  }
-  else if (sc68_music_info(sc68, mi,
-                           track>0 ? track : SC68_DEF_TRACK, disk)) {
+  if (sc68_music_info(sc68, mi, track>0 ? track : SC68_DEF_TRACK, disk)) {
   }
   else if (!strcasecmp(data,"album")) { /* Album name */
     value = mi->album;
@@ -1045,7 +1119,7 @@ static int xinfo(const char *data, char *dest, size_t destlen,
   }
   else if (!strcasecmp(data,"track")) {
     if (track == mi->trk.track) {
-      snprintf(dest, destlen, "%02d", track);
+      snprintf(dest, destlen, "%d", track);
       value = dest;
     }
   }
@@ -1068,8 +1142,11 @@ static int xinfo(const char *data, char *dest, size_t destlen,
   }
   else if (!strcasecmp(data,"length")) {
     /* length in ms */
-    /* $$$ Right now disk length but that might change in the future */
+    if (track == mi->trk.track) {
+      snprintf(dest, destlen, "%u", mi->trk.time_ms);
+    } else {
     snprintf(dest, destlen, "%u", mi->dsk.time_ms);
+    }
     value = dest;
   }
   else if (!strcasecmp(data,"year")) {
@@ -1082,19 +1159,14 @@ static int xinfo(const char *data, char *dest, size_t destlen,
     if (!value) value = get_tag(&mi->dsk,"converter");
     value = get_tag(&mi->trk,"converter");
   }
-  else if (!strcasecmp(data,"streamtype")) {
-  }
-  else if (!strcasecmp(data, "lossless")) {
-    value = "1";
-  }
   else if (!strcasecmp(data, "comment")) {
     value = get_tag(&mi->trk,"comment");
     if(!value)
     value = get_tag(&mi->dsk,"comment");
   }
-  else if (!strcasecmp(data,"")) {
+  /*else if (!strcasecmp(data,"")) {
     DBG("unhandled TAG '%s'\n", data);
-  }
+  }*/
 
   if (!value)
     return 0;
@@ -1121,26 +1193,95 @@ EXPORT
 int winampGetExtendedFileInfo(const char *uri, const char *data,
                               char *dest, size_t max)
 {
+  if (SameStrA(data, "type") ||
+      SameStrA(data, "lossless") ||
+      SameStrA(data, "streammetadata"))
+  {
+    dest[0] = '0';
+    dest[1] = 0;
+    return 1;
+  }
+  else if (SameStrA(data, "streamgenre") ||
+           SameStrA(data, "streamtype") ||
+           SameStrA(data, "streamurl") ||
+           SameStrA(data, "streamname"))
+  {
+    return 0;
+  }
+  else if (SameStrA(data, "family"))
+  {
+    if (uri && *uri && stristr(uri, ".gz"))
+    {
+      strncpy(dest, "sc68 (Compressed) Audio File", max);
+    }
+    else
+    {
+      strncpy(dest, "sc68 Audio File", max);
+    }
+    return 1;
+  }
+
+  if (!uri || !uri[0])
+  {
+    return 0;
+  }
+
+  create_sc68();
+
   sc68_disk_t disk;
   int res = 0;
 
   if (data && *data && dest && max > 2) {
-    if (!uri || !*uri) {
+    /*if (!uri || !*uri) {
       if (lock()) {
         res = xinfo(data, dest, max, g_sc68, 0, g_track);
         unlock();
       }
-    } else {
-      int settrack = track_from_uri(&uri);
-      if (disk = wasc68_cache_get(uri), disk) {
+    } else*/ {
+      char * filename = 0;
+      int settrack = extract_track_from_uri(uri, &filename);
+      if (disk = wasc68_cache_get(filename/*/uri/**/), disk) {
         res = xinfo(data, dest, max, 0, disk, settrack);
         wasc68_cache_release(disk, 0);
       }
+      if (filename)
+        free(filename);
     }
   }
   return res;
 }
 
+struct transcon {
+    sc68_t* sc68;                        /* sc68 instance               */
+    int done;                             /* 0:not done, 1:done -1:error */
+    int allin1;                           /* 1:all tracks at once        */
+    size_t pcm;                           /* pcm counter                 */
+};
+
+EXPORT
+int GetSubSongInfo(const wchar_t* filename) {
+  int tracks = 0;
+  struct transcon* trc = (struct transcon* )malloc(sizeof(struct transcon));
+  if (trc) {
+    trc->pcm = 0;
+    trc->allin1 = 0;
+    trc->sc68 = sc68_create(0);
+    if (trc->sc68) {
+      char uri[MAX_PATH] = { 0 };
+      ConvertUnicodeFn(uri, ARRAYSIZE(uri), filename, CP_ACP);
+      if (!sc68_load_uri(trc->sc68, uri)) {
+        if (tracks = sc68_cntl(trc->sc68, SC68_GET_TRACKS), tracks <= 0) {
+          tracks = 0;
+        }
+      }
+      sc68_destroy(trc->sc68);
+    }
+    free(trc);
+  }
+  return tracks;
+}
+
+#if 0
 /**
  * Provides fake support for writing tag to prevent winamp unified
  * file info to complain.
@@ -1162,6 +1303,7 @@ int winampWriteExtendedFileInfo()
   DBG("fake success\n");
   return 1;
 }
+#endif
 
 int set_asid(int asid)
 {

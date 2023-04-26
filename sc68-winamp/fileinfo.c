@@ -26,6 +26,7 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+#if 0
 
 /* winamp sc68 declarations */
 #include "wasc68.h"
@@ -107,7 +108,6 @@ static int cntl(void * _cookie, const char * key, int op, sc68_dialval_t *val)
   return 1;
 }
 
-
 /* Only exported function. */
 int fileinfo_dialog(HINSTANCE hinst, HWND hwnd, const char * uri)
 {
@@ -117,7 +117,7 @@ int fileinfo_dialog(HINSTANCE hinst, HWND hwnd, const char * uri)
     cookie->magic = magic;
     cookie->hinst = hinst;
     cookie->hwnd  = hwnd;
-    cookie->uri   = uri ? strdup(uri) : uri;
+    cookie->uri   = uri ? _strdup(uri) : uri;
     if (!cookie->uri ||
         !(cookie->disk = sc68_load_disk_uri(uri)))
       del_cookie(cookie);
@@ -134,3 +134,4 @@ int fileinfo_dialog(HINSTANCE hinst, HWND hwnd, const char * uri)
   DBG("*%d*\n", res);
   return res;
 }
+#endif

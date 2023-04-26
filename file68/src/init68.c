@@ -118,7 +118,7 @@ static int ocp(const option68_t * opt, value68_t * value)
   static const char * (*f[4])(const char *) = {
     rsc68_set_share,rsc68_set_user,rsc68_set_music,rsc68_set_remote_music
   };
-  int idx = opt - opts;
+  int idx = (int)(opt - opts);
   assert(idx >= 0 && idx < 4);
 
   return -!f[idx](value->str);

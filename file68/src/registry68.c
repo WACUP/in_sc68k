@@ -127,7 +127,7 @@ static char * SetSystemError(char * str, int max, int err)
     /* pointer to array of message inserts */
     0);
   str[max-1] = 0;
-  l = strlen(str);
+  l = (int)strlen(str);
   while (--l>=0 && (str[l] == '\n' || str[l] == '\r' ||str[l] == ' '))
     str[l] = 0;
 
@@ -215,7 +215,7 @@ registry68_key_t registry68_open(registry68_key_t hkey,
     goto error;
   }
 
-  if ( (len = strlen(kname_cst)) >= sizeof(kname) ) {
+  if ( (len = (int)strlen(kname_cst)) >= sizeof(kname) ) {
     msg68_critical("registry68: key name too long '%s::%s'\n",
                    keyhdlname(hkey), kname_cst);
     goto error;
@@ -247,7 +247,7 @@ static void prepare_key(registry68_key_t * p_rootkey,
 {
   registry68_key_t rootkey = *p_rootkey;
   const char * kname_cst = *p_kname_cst;
-  int len = strlen(kname_cst);
+  int len = (int)strlen(kname_cst);
 
   /* Extract rootkey from path. */
   if (rootkey == HKEY_INVALID &&
@@ -433,7 +433,7 @@ int registry68_gets(registry68_key_t rootkey,
 int registry68_puts(registry68_key_t rootkey,
                     const char * kname_cst, const char * kdata)
 {
-  int l = kdata ? strlen(kdata): 0;
+  int l = kdata ? (int)strlen(kdata): 0;
   return put_data(rootkey, kname_cst, kdata, l, REG_SZ);
 }
 

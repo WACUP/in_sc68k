@@ -439,7 +439,7 @@ static void filter_dacout(ym_t * const ym)
 
 static void filter_none(ym_t * const ym)
 {
-  const int n = (ym->outptr - ym->outbuf);
+  const int n = (const int)(ym->outptr - ym->outbuf);
   if (n > 0) {
     int i;
     /* DAC in -> out */
@@ -452,7 +452,7 @@ static void filter_none(ym_t * const ym)
 
 static void filter_boxcar2(ym_t * const ym)
 {
-  const int n = (ym->outptr - ym->outbuf) >> 1;
+  const int n = (const int)(ym->outptr - ym->outbuf) >> 1;
 
   if (n > 0) {
     /* DAC out 2 by 2 */
@@ -471,7 +471,7 @@ static void filter_boxcar2(ym_t * const ym)
 
 static void filter_boxcar4(ym_t * const ym)
 {
-  const int n = (ym->outptr - ym->outbuf) >> 2;
+  const int n = (const int)(ym->outptr - ym->outbuf) >> 2;
 
   if (n > 0) {
     int m = n;
@@ -505,7 +505,7 @@ static void filter_boxcar(ym_t * const ym) {
  */
 static void filter_mixed(ym_t * const ym)
 {
-  const int n = (ym->outptr - ym->outbuf) >> 2; /* Number of block */
+  const int n = (const int)(ym->outptr - ym->outbuf) >> 2; /* Number of block */
 
   if (n > 0) {
     s32 * src = ym->outbuf, * dst = src;
@@ -568,7 +568,7 @@ static void filter_mixed(ym_t * const ym)
 
 static void filter_1pole(ym_t * const ym)
 {
-  const int n = ym->outptr - ym->outbuf;
+  const int n = (const int)(ym->outptr - ym->outbuf);
 
   if (n > 0) {
     s32 * src = ym->outbuf, * dst = src;
@@ -628,7 +628,7 @@ static void filter_1pole(ym_t * const ym)
  */
 static void filter_2pole(ym_t * const ym)
 {
-  const int n = ym->outptr - ym->outbuf;
+  const int n = (const int)(ym->outptr - ym->outbuf);
 
   if (n > 0) {
     s32 * src = ym->outbuf, * dst = src;
@@ -707,7 +707,7 @@ int run(ym_t * const ym, s32 * output, const cycle68_t ymcycles)
   /* reset event list. */
   ym->event_ptr = ym->event_buf;
 
-  return ym->outptr - ym->outbuf;
+  return (int)(ym->outptr - ym->outbuf);
 }
 
 static

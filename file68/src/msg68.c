@@ -81,6 +81,7 @@ void * msg68_set_cookie(void * userdata)
 /* Print message (variable argument). */
 void msg68x_va(int cat, void * cookie, const char * fmt, va_list list)
 {
+#ifdef DEBUG
   if (output) {
     switch (cat) {
     default:
@@ -96,152 +97,191 @@ void msg68x_va(int cat, void * cookie, const char * fmt, va_list list)
       break;
     }
   }
+#endif
 }
 
 void msg68x(int bit, void * cookie, const char * fmt, ...)
 {
+#ifdef DEBUG
   va_list list;
   va_start(list, fmt);
   msg68x_va(bit, cookie, fmt, list);
   va_end(list);
+#endif
 }
 
 void msg68_va(int bit, const char * fmt, va_list list)
 {
+#ifdef DEBUG
   msg68x_va(bit, cookie, fmt, list);
+#endif
 }
 
 void msg68(int bit, const char * fmt, ...)
 {
+#ifdef DEBUG
   va_list list;
   va_start(list, fmt);
   msg68x_va(bit, cookie, fmt, list);
   va_end(list);
+#endif
 }
 
 void msg68_trace(const char * fmt, ...)
 {
+#ifdef DEBUG
   va_list list;
   va_start(list, fmt);
   msg68_va(msg68_TRACE, fmt, list);
   va_end(list);
+#endif
 }
 
 void msg68x_trace(void * userdata, const char * fmt, ...)
 {
+#ifdef DEBUG
   va_list list;
   va_start(list, fmt);
   msg68x_va(msg68_TRACE, userdata, fmt, list);
   va_end(list);
+#endif
 }
 
 void msg68_debug(const char * fmt, ...)
 {
+#ifdef DEBUG
   va_list list;
   va_start(list, fmt);
   msg68_va(msg68_DEBUG, fmt, list);
   va_end(list);
+#endif
 }
 
 void msg68x_debug(void * userdata, const char * fmt, ...)
 {
+#ifdef DEBUG
   va_list list;
   va_start(list, fmt);
   msg68x_va(msg68_DEBUG, userdata, fmt, list);
   va_end(list);
+#endif
 }
 
 void msg68_info(const char * fmt, ...)
 {
+#ifdef DEBUG
   va_list list;
   va_start(list, fmt);
   msg68_va(msg68_INFO, fmt, list);
   va_end(list);
+#endif
 }
 
 void msg68x_info(void * userdata, const char * fmt, ...)
 {
+#ifdef DEBUG
   va_list list;
   va_start(list, fmt);
   msg68x_va(msg68_INFO, userdata, fmt, list);
   va_end(list);
+#endif
 }
 
 void msg68_notice(const char * fmt, ...)
 {
+#ifdef DEBUG
   va_list list;
   va_start(list, fmt);
   msg68_va(msg68_NOTICE, fmt, list);
   va_end(list);
+#endif
 }
 
 void msg68x_notice(void * userdata, const char * fmt, ...)
 {
+#ifdef DEBUG
   va_list list;
   va_start(list, fmt);
   msg68x_va(msg68_NOTICE, userdata, fmt, list);
   va_end(list);
+#endif
 }
 
 void msg68_warning(const char * fmt, ...)
 {
+#ifdef DEBUG
   va_list list;
   va_start(list, fmt);
   msg68_va(msg68_WARNING, fmt, list);
   va_end(list);
+#endif
 }
 
 void msg68x_warning(void * userdata, const char * fmt, ...)
 {
+#ifdef DEBUG
   va_list list;
   va_start(list, fmt);
   msg68x_va(msg68_WARNING, userdata, fmt, list);
   va_end(list);
+#endif
 }
 
 void msg68_error(const char * fmt, ...)
 {
+#ifdef DEBUG
   va_list list;
   va_start(list, fmt);
   msg68_va(msg68_ERROR, fmt, list);
   va_end(list);
+#endif
 }
 
 void msg68x_error(void * userdata, const char * fmt, ...)
 {
+#ifdef DEBUG
   va_list list;
   va_start(list, fmt);
   msg68x_va(msg68_ERROR, userdata, fmt, list);
   va_end(list);
+#endif
 }
 
 void msg68_critical(const char * fmt, ...)
 {
+#ifdef DEBUG
   va_list list;
   va_start(list, fmt);
   msg68_va(msg68_CRITICAL, fmt, list);
   va_end(list);
+#endif
 }
 
 void msg68x_critical(void * userdata, const char * fmt, ...)
 {
+#ifdef DEBUG
   va_list list; va_start(list, fmt);
   msg68x_va(msg68_CRITICAL, userdata, fmt, list);
   va_end(list);
+#endif
 }
 
 void msg68_always(const char * fmt, ...)
 {
+#ifdef DEBUG
   va_list list; va_start(list, fmt);
   msg68_va(msg68_ALWAYS, fmt, list);
   va_end(list);
+#endif
 }
 
 void msg68x_always(void * userdata, const char * fmt, ...)
 {
+#ifdef DEBUG
   va_list list; va_start(list, fmt);
   msg68x_va(msg68_ALWAYS, userdata, fmt, list);
   va_end(list);
+#endif
 }
 
 static inline int is_valid_category(const int i)

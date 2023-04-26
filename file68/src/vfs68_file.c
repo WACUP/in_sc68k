@@ -155,7 +155,7 @@ static int isf_read(vfs68_t * vfs, void * data, int n)
 
   return !isf->f
     ? -1
-    : fread(data, 1, n, isf->f)
+    : (int)fread(data, 1, n, isf->f)
     ;
 }
 
@@ -165,7 +165,7 @@ static int isf_write(vfs68_t * vfs, const void * data, int n)
 
   return !isf->f
     ? -1
-    : fwrite(data, 1, n, isf->f)
+    : (int)fwrite(data, 1, n, isf->f)
     ;
 }
 
@@ -263,7 +263,7 @@ vfs68_t * create(const char * fname, int mode)
   /* Don't to add 1 for the trailing zero, it has already been coundted
    * in the definition of vfs68_file_t::fname.
    */
-  len = strlen(fname);
+  len = (int)strlen(fname);
   isf = malloc(sizeof(vfs68_file_t) + len);
   if (!isf)
     return 0;

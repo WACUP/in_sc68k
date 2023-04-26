@@ -696,7 +696,7 @@ emu68_t * emu68_create(emu68_parms_t * const parms)
     goto error;
   }
 
-  memsize = 1 << p->log2mem;
+  memsize = (int)(1 << p->log2mem);
   membyte = sizeof(emu68_t) + (memsize << !!p->debug);
   emu68   = emu68_alloc(membyte);
   if (!emu68)
@@ -756,9 +756,9 @@ emu68_t * emu68_duplicate(emu68_t * emu68src, const char * dupname)
   emu68->status       = emu68src->status;
 
   /* Copy memory */
-  memcpy(emu68->mem, emu68src->mem, 1<<emu68->log2mem);
+  memcpy(emu68->mem, emu68src->mem, (size_t)1<<emu68->log2mem);
   if (emu68->chk)
-    memcpy(emu68->chk, emu68src->chk, 1<<emu68->log2mem);
+    memcpy(emu68->chk, emu68src->chk, (size_t)1<<emu68->log2mem);
 
   /* Copy breakpoints */
   memcpy(emu68->breakpoints, emu68src->breakpoints,

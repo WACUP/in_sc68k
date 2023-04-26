@@ -356,9 +356,9 @@ static void appname_from_path(char *path, char * appname, int max)
   s = basename(path);
   e = strrchr(s,EXTENSION_SEP);
   if (!e || e == s)
-    len = strlen(s);
+    len = (int)strlen(s);
   else
-    len = e - s;
+    len = (int)(e - s);
   if (len >= max)
     len = max-1;
   strncpy(appname, s, len);
@@ -628,7 +628,7 @@ static void irqhandler(emu68_t* const emu68, int vector, void * cookie)
     const addr68_t adr = emu68->reg.a[7] & emu68->memmsk;
     const addr68_t bot = emu68->memmsk+1-16;
     char line[16 * 3];
-    int i, j, l = strlen(irqname);
+    int i, j, l = (int)strlen(irqname);
 
     if (vector == ILLEGAL_VECTOR)
       sprintf(irqname+l, "#$%02x-%02x",
@@ -1001,7 +1001,7 @@ static void eval_debug(void)
     opt = option68_get("debug", opt68_ALWAYS);
   if (opt && opt->org != opt68_UDF) {
     int org = opt->org;
-    char * s = strdup(opt->val.str);
+    char * s = _strdup(opt->val.str);
     if (s) {
       option68_unset(opt);
       option68_set(opt, s, opt68_ALWAYS, org);
@@ -2297,7 +2297,7 @@ static void music_info(sc68_t * sc68, sc68_music_info_t * f, const disk68_t * d,
                        int track, int loops)
 {
   const music68_t * m;
-  int i, maxtag = &f->_lasttag - &f->album;
+  int i, maxtag = (int)(&f->_lasttag - &f->album);
 
   assert(f);
   assert(in_disk(d, track));

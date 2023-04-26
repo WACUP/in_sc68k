@@ -26,11 +26,13 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+#if 0
 
 /* winamp sc68 declarations */
 #include "wasc68.h"
 
 /* winamp 2 */
+#define THE_INPUT_PLAYBACK_GUID
 #include "winamp/in2.h"
 
 /* libc */
@@ -114,3 +116,4 @@ int tracksel_dialog(HINSTANCE hinst, HWND hwnd, sc68_disk_t disk)
   DBG("*%d*\n", res);
   return res;
 }
+#endif

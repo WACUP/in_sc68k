@@ -46,16 +46,23 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include <windows.h>
+#define WA_UTILS_SIMPLE
+#include <loader/loader/utils.h>
+#include <loader/loader/paths.h>
+
 #ifndef DEBUG_CONFIG68_O
 # define DEBUG_CONFIG68_O 0
 #endif
 
 static int        config68_cat = msg68_DEFAULT;
-static int        config68_use_registry = -1;
+static int        config68_use_registry = 0/*/-1/**/;
 static char       config68_def_name[] = "sc68";
-
+static char       config68_file[] = "Plugins\\sc68.cfg";
+#if 0
 static const char cuk_fmt[] = "CUK:Software/sashipa/sc68-%s/";
 static const char lmk_str[] = "LMK:Software/sashipa/sc68/config/";
+#endif
 static const char prefix[]  = "sc68-";
 static const char optcat[]  = "option";
 
@@ -120,7 +127,7 @@ static int is_symbol_char(int c)
 
 static int save_config_entry(vfs68_t * os, const option68_t * opt)
 {
-  char tmp[256];
+  char tmp[256] = {0};
   int i, j, c;
   const int max = sizeof(tmp)-1;
 
@@ -185,7 +192,7 @@ static int save_config_entry(vfs68_t * os, const option68_t * opt)
 int config68_save(const char * confname)
 {
   int err = 0;
-  char tmp[128];
+  char tmp[MAX_PATH] = { 0 };
   option68_t * opt;
 
   confname = confname ? confname : config68_def_name;
@@ -195,8 +202,9 @@ int config68_save(const char * confname)
     vfs68_t * os=0;
     const int sizeof_config_hd = sizeof(config_header)-1;
 
-    strncpy(tmp, "sc68://config/", sizeof(tmp));
-    strcat68(tmp, confname, sizeof(tmp));
+    /*strncpy(tmp, "sc68://config/", sizeof(tmp));
+    strcat68(tmp, confname, sizeof(tmp));/*/
+    CombinePathA(tmp, GetPaths()->settings_dir_83, config68_file);/**/
     os = uri68_vfs(tmp, 2, 0);
     err = vfs68_open(os);
     if (!err) {
@@ -211,6 +219,7 @@ int config68_save(const char * confname)
     vfs68_close(os);
     vfs68_destroy(os);
   } else {
+#if USE_REGISTRY68
     /* Save into registry */
     int l = snprintf(tmp, sizeof(tmp), cuk_fmt, confname);
     char * s = tmp + l;
@@ -232,12 +241,13 @@ int config68_save(const char * confname)
         break;
       }
     }
-
+#endif
   }
 
   return err;
 }
 
+#if USE_REGISTRY68
 /* Load config from registry */
 static int load_from_registry(const char * confname)
 {
@@ -285,17 +295,20 @@ static int load_from_registry(const char * confname)
 
   return 0;
 }
+#endif
 
 /* Load config from file */
+#include <windows.h>
 static int load_from_file(const char * confname)
 {
   vfs68_t * is = 0;
-  char s[256], * word;
+  char s[MAX_PATH] = { 0 }, * word;
   int err;
   option68_t * opt;
 
-  strcpy(s, "sc68://config/");
-  strcat(s, confname);
+  /*strcpy(s, "sc68://config/");
+  strcat(s, confname);/*/
+  CombinePathA(s, GetPaths()->settings_dir_83, config68_file);/**/
   is = uri68_vfs(s, 1, 0);
   err = vfs68_open(is);
   if (err)
@@ -378,10 +391,14 @@ error:
 int config68_load(const char * appname)
 {
   appname = appname ? appname : config68_def_name;
+#if USE_REGISTRY68
   return config68_use_registry
     ? load_from_registry(appname)
     : load_from_file(appname)
     ;
+#else
+  return load_from_file(appname);
+#endif
 }
 
 int config68_init(int argc, char * argv[])
@@ -389,10 +406,12 @@ int config68_init(int argc, char * argv[])
   config68_cat = msg68_cat("conf","config file", DEBUG_CONFIG68_O);
   option68_append(opts,sizeof(opts)/sizeof(*opts));
   argc = option68_parse(argc,argv);
+#if USE_REGISTRY68
   config68_use_registry = !config68_force_file && registry68_support();
   TRACE68(config68_cat,
           "conf68: will use %s\n",
           config68_use_registry?"registry":"config file");
+#endif
   return argc;
 }
 
