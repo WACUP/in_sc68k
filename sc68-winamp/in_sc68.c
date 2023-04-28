@@ -662,7 +662,7 @@ int play(const in_char *fn)
   plugin.outMod->SetVolume(-666);
 
   /* Init info and visualization stuff */
-  plugin.SetInfo(0, g_spr/1000, 2, 1);
+  plugin.SetInfo((g_spr * 2 * 16) / 1000, g_spr / 1000, 2, 1);
   plugin.SAVSAInit(g_maxlatency, g_spr);
   plugin.VSASetInfo(g_spr, 2);
 
@@ -1166,6 +1166,15 @@ static int xinfo(const char *data, char *dest, size_t destlen,
     value = get_tag(&mi->trk,"comment");
     if(!value)
     value = get_tag(&mi->dsk,"comment");
+  }
+  else if (!strcasecmp(data, "samplerate")) {
+    value = I2AStr(sc68_cntl(g_sc68, SC68_GET_SPR), dest, destlen);
+  }
+  else if (!strcasecmp(data, "bitrate")) {
+    const int br = (sc68_cntl(g_sc68, SC68_GET_SPR) * 2 * 16);
+    if (br > 0) {
+      value = I2AStr((br / 1000), dest, destlen);
+    }
   }
   /*else if (!strcasecmp(data,"")) {
     DBG("unhandled TAG '%s'\n", data);
