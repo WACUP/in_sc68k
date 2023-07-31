@@ -115,22 +115,22 @@ static volatile LONG g_settrack;   /* request change track   */
 /* The decode thread */
 static DWORD WINAPI playloop(LPVOID b);
 static void GetFileExtensions(void);
-static int init();
-static void quit();
+static int init(void);
+static void quit(void);
 static void config(HWND);
 static void about(HWND);
 static  int infobox(const in_char *, HWND);
 static  int isourfile(const in_char *);
-static void pause();
-static void unpause();
-static  int ispaused();
-static  int getlength();
-static  int getoutputtime();
-static void setoutputtime(int);
-static void setvolume(int);
-static void setpan(int);
+static void pause(void);
+static void unpause(void);
+static  int ispaused(void);
+static  int getlength(void);
+static  int getoutputtime(void);
+static void setoutputtime(const int);
+static void setvolume(const int);
+static void setpan(const int);
 static  int play(const in_char *);
-static void stop();
+static void stop(void);
 static void getfileinfo(const in_char *, in_char *, int *);
 
 EXTERN int fileinfo_dialog(HINSTANCE hinst, HWND hwnd, const char * uri);
@@ -398,7 +398,7 @@ static
 int isourfile(const in_char * file)
 {
   int ret = 0;
-  if (file && *file) {
+  if (file && *file && !IsPathURLA(file)) {
     // to save doing some of the things with making
     // the plug-in fully unicode for now this'll do
     // just enough to get a valid extension to use
@@ -428,17 +428,17 @@ int isourfile(const in_char * file)
 /*****************************************************************************
  * PAUSE
  ****************************************************************************/
-static void pause() {
+static void pause(void) {
   atomic_set(&g_paused,1);
   plugin.outMod->Pause(1);
 }
 
-static void unpause() {
+static void unpause(void) {
   atomic_set(&g_paused,0);
   plugin.outMod->Pause(0);
 }
 
-static int ispaused() {
+static int ispaused(void) {
   return atomic_get(&g_paused);
 }
 
@@ -446,7 +446,7 @@ static
 /*****************************************************************************
  * GET LENGTH (MS)
  ****************************************************************************/
-int getlength()
+int getlength(void)
 {
   int ms = 0;
   if (lock()) {
@@ -463,7 +463,7 @@ static
 /*****************************************************************************
  * GET CURRENT POSITION (MS)
  ****************************************************************************/
-int getoutputtime()
+int getoutputtime(void)
 {
   int ms = 0;
   if (lock()) {
@@ -477,7 +477,7 @@ static
 /*****************************************************************************
  * SET CURRENT POSITION (MS)
  ****************************************************************************/
-void setoutputtime(int ms)
+void setoutputtime(const int ms)
 {
 /* Not supported ATM.
  * It has to signal the play thread it has to seek.
@@ -490,7 +490,7 @@ static
 /*****************************************************************************
  * SET VOLUME
  ****************************************************************************/
-void setvolume(int volume)
+void setvolume(const int volume)
 {
   plugin.outMod->SetVolume(volume);
 }
@@ -499,7 +499,7 @@ static
 /*****************************************************************************
  * SET PAN
  ****************************************************************************/
-void setpan(int pan)
+void setpan(const int pan)
 {
   plugin.outMod->SetPan(pan);
 }
@@ -534,7 +534,7 @@ static
 /*****************************************************************************
  * STOP
  ****************************************************************************/
-void stop()
+void stop(void)
 {
   if (lock()) {
     atomic_set(&g_stopreq,1);
@@ -894,6 +894,7 @@ static
 int init(void)
 {
   // TODO setup localisation / plug-in names, etc
+  plugin.description = (char*)L"sc68 (Atari ST & Amiga) Player v" PACKAGE_VERSION;
   return IN_INIT_SUCCESS;
 }
 
@@ -1065,7 +1066,7 @@ static
 /*****************************************************************************
  * PLUGIN SHUTDOWN
  ****************************************************************************/
-void quit()
+void quit(void)
 {
   DBG("\n");
 #if 0
