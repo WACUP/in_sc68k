@@ -199,7 +199,7 @@ In_Module plugin =
   init,
   quit,
   getfileinfo,
-  infobox,
+  0/*infobox*/,
   isourfile,
   play,
   pause,
@@ -379,17 +379,17 @@ void about(HWND hwnd)
   AboutMessageBox(hwnd, message, L"sc68 (Atari ST & Amiga) Player");
 }
 
-static
+/*static
 /*****************************************************************************
  * INFO DIALOG
  ****************************************************************************/
-int infobox(const in_char *uri, HWND hwnd)
+/*int infobox(const in_char *uri, HWND hwnd)
 {
 #if 0
   fileinfo_dialog(DLGHINST, hwnd, uri);
 #endif
   return INFOBOX_UNCHANGED;
-}
+}*/
 
 static
 /*****************************************************************************
@@ -894,7 +894,7 @@ static
 int init(void)
 {
   // TODO setup localisation / plug-in names, etc
-  plugin.description = (char*)L"sc68 (Atari ST & Amiga) Player v" PACKAGE_VERSION;
+  plugin.description = (char*)L"sc68 (Atari ST & Amiga) Player v" TEXT(PACKAGE_VERSION);
   return IN_INIT_SUCCESS;
 }
 
@@ -1210,8 +1210,8 @@ int winampGetExtendedFileInfo(const char *uri, const char *data,
       SameStrA(data, "lossless") ||
       SameStrA(data, "streammetadata"))
   {
-    dest[0] = '0';
-    dest[1] = 0;
+    dest[0] = L'0';
+    dest[1] = L'\0';
     return 1;
   }
   else if (SameStrA(data, "streamgenre") ||
