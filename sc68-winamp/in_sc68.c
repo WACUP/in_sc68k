@@ -90,7 +90,6 @@ static char          g_magic[8] = "wasc68!";
 
 static WNDPROC       g_mwhkproc;   /* main window chain proc */
 static HANDLE        g_thdl;       /* thread handle          */
-static DWORD         g_tid;        /* thread id              */
 static char        * g_uri;        /* allocated URI          */
 static sc68_t      * g_sc68;       /* sc68 emulator instance */
 static int           g_code;       /* sc68 process code      */
@@ -232,10 +231,11 @@ static void GetFileExtensions(void)
     static int loaded_extensions;
     if (!loaded_extensions)
     {
+        loaded_extensions = 1;
+
         // TODO localise
         plugin.FileExtensions = (char*)L"SC68;SC68.GZ\0sc68 File (*.SC68;*.SC68.GZ)\0"
                                               L"SND;SNDH\0sndh File (*.SND;*.SNDH)\0";
-        loaded_extensions = 1;
     }
 }
 
@@ -654,7 +654,7 @@ int play(const in_char *fn)
   g_track = sc68_cntl(g_sc68, SC68_GET_TRACK);
 
   /* Init output module */
-  g_maxlatency = plugin.outMod->Open(g_spr, 2, 16, 0, 0);
+  g_maxlatency = (plugin.outMod->Open ? plugin.outMod->Open(g_spr, 2, 16, -1, -1) : -1);
   if (g_maxlatency < 0)
     goto exit;
 
@@ -668,14 +668,9 @@ int play(const in_char *fn)
 
 
   /* Init play thread */
-  g_thdl = (HANDLE)
-    CreateThread(NULL,                  /* Default Security Attributs */
-                 0,                     /* Default stack size         */
-                 (LPTHREAD_START_ROUTINE)playloop, /* Thread function */
-                 (LPVOID) g_magic,      /* Thread Cookie              */
-                 0,                     /* Thread status              */
-                 &g_tid                 /* Thread Id                  */
-      );
+  g_thdl = StartThread(playloop, g_magic, /*plugin.config->
+					   GetInt(playbackConfigGroupGUID, L"priority",
+						  */THREAD_PRIORITY_HIGHEST/*)*/, 0, NULL);
 
   if (err = !g_thdl, !err) {
     atomic_set(&g_playing,1);
@@ -1217,7 +1212,8 @@ int winampGetExtendedFileInfo(const char *uri, const char *data,
   else if (SameStrA(data, "streamgenre") ||
            SameStrA(data, "streamtype") ||
            SameStrA(data, "streamurl") ||
-           SameStrA(data, "streamname"))
+           SameStrA(data, "streamname") ||
+           SameStrA(data, "reset"))
   {
     return 0;
   }

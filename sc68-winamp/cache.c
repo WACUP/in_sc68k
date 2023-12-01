@@ -50,7 +50,7 @@ static struct {
 } g_cache;
 
 static inline int cache_lock(void) {
-  return WaitForSingleObject(g_cache.lock, INFINITE) == WAIT_OBJECT_0;
+  return (g_cache.lock ? (WaitForSingleObject(g_cache.lock, INFINITE) == WAIT_OBJECT_0) : 0);
 }
 
 static inline void cache_unlock(void) {
