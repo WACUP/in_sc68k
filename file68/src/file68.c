@@ -664,6 +664,10 @@ static int valid(disk68_t * mb)
   /* Init all music in this file */
   for (m = mb->mus, i = 0; m < mb->mus + mb->nb_mus; m++, i++) {
 
+    /* Default d0 value is track number */
+    if ( ! m->d0 )
+      m->d0 = i+1;
+
     /* Default load address */
     if ( (m->has.pic = !m->a0) )
       m->a0 = SC68_LOADADDR;
@@ -1273,7 +1277,7 @@ static int sndh_info(disk68_t * mb, int len)
   }
 
   for (i=0; i<mb->nb_mus; ++i) {
-    mb->mus[i].d0    = i+1;
+    mb->mus[i].d0    = 0; /* i+1 set by valid() */
     mb->mus[i].loops = 0;
     mb->mus[i].frq   = frq ? frq : vbl;
     if (!(mb->mus[i].hwflags & SC68_XTD)) {
@@ -1878,10 +1882,15 @@ static int save_number(vfs68_t * os, const char * chunk, int n)
   return save_chunk(os, chunk, number, 4);
 }
 
+static int save_if(vfs68_t * os, const char * chunk, int cond, int n)
+{
+  return cond ? save_number(os, chunk, n) : 0;
+}
+
 /* save CHUNK and number (only if n!=0) */
 static int save_nonzero(vfs68_t * os, const char * chunk, int n)
 {
-  return !n ? 0 : save_number(os, chunk, n);
+  return save_if(os, chunk, n, n);
 }
 
 int file68_save_uri(const char * fname, const disk68_t * mb,
@@ -2018,14 +2027,10 @@ static const char * save_sc68(vfs68_t * os, const disk68_t * mb,
                               int len, int version)
 {
   const char * errstr = 0;
+  int headsz, imus, opened = 0;
 
-  int opened = 0;
-
-  const music68_t * mus;
   char * mname, * aname, /* * cname, */ * data;
-
   const char * header;
-  int headsz;
 
   get_header(version, &header, &headsz);
 
@@ -2067,8 +2072,9 @@ static const char * save_sc68(vfs68_t * os, const disk68_t * mb,
   mname = mb->tags.tag.title.val;
   aname = mb->tags.tag.artist.val;
   /* cname =  */data = 0;
-  for (mus = mb->mus; mus < mb->mus + mb->nb_mus; mus++) {
-    int flags = mus->hwflags;
+  for (imus = 0; imus < mb->nb_mus; ++imus) {
+    const music68_t * const mus = mb->mus + imus;
+    const int flags = mus->hwflags;
 
     /* Save track-name, author, composer, replay */
     if (0
@@ -2090,17 +2096,14 @@ static const char * save_sc68(vfs68_t * os, const disk68_t * mb,
     /* Save play parms */
     if (0
         || save_string (os, CH68_REPLAY, mus->replay)
-        || save_nonzero(os, CH68_D0,     mus->d0)
-        || save_nonzero(os, CH68_AT,    !mus->has.pic     * mus->a0)
-        || save_nonzero(os, CH68_FRQ,    (mus->frq != 50) * mus->frq)
-        || save_nonzero(os, CH68_FRAME,  mus->has.time    * mus->first_fr)
-        || save_nonzero(os, CH68_LOOP,   mus->has.loop    * mus->loops)
-        || ( mus->has.loop &&
-             save_number(os, CH68_LOOPFR, mus->loops_fr) )
+	|| save_if(os, CH68_D0,	    mus->d0!=imus+1, mus->d0)
+	|| save_if(os, CH68_AT,	   !mus->has.pic,    mus->a0)
+	|| save_if(os, CH68_FRQ,    mus->frq != 50,  mus->frq)
+	|| save_if(os, CH68_FRAME,  mus->has.time,   mus->first_fr)
+	|| save_if(os, CH68_LOOP,   mus->has.loop,   mus->loops)
+	|| save_if(os, CH68_LOOPFR, mus->has.loop,   mus->loops_fr)
         || save_number (os, CH68_TYP,    flags)
-        || ( mus->has.sfx &&
-             save_chunk(os, CH68_SFX, 0, 0) )
-      ) {
+	|| save_if(os, CH68_SFX, mus->has.sfx, 0) ) {
       errstr = "chunk write";
       goto error;
     }

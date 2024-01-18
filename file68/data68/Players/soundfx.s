@@ -1,5 +1,5 @@
-;	SoundFX replay routine
-;	adapted for sc68 by Gerald Schnabel <gschnabel@gmx.de>
+;;; SoundFX replay routine
+;;; adapted for sc68 by Gerald Schnabel <gschnabel@gmx.de>
 
 	include "lib/org.s"
 
@@ -8,27 +8,27 @@
 	bra.w	fx_play
 
 fx_init:
-	lea	SoundFXTune(pc),a0
+	;; lea       SoundFXTune(pc),a0
 	move.l	a0,SongPointer
-	add	#60,a0			;Laengentabelle ueberspringen
+	lea	60(a0),a0	  ;Laengentabelle ueberspringen
 	move.b	470(a0),AnzPat+1	;Laenge des Sounds
 	movem.l	d1-d7/a0-a6,-(a7)
 	move.l	SongPointer,a0
-	lea	532(A0),a0
-	move	AnzPat(pc),d2		;wieviel Positions
-	subq	#1,d2			;für dbf
+	lea	532(a0),a0
+	move	AnzPat(pc),d2	;wieviel Positions
+	subq	#1,d2		;für dbf
 	moveq	#0,d1
 	moveq	#0,d0
 SongLenLoop:
-	move.b	(a0)+,d0		;Patternnummer holen
-	cmp.b	d0,d1			;ist es die höchste ?
-	bhi.s	LenHigher		;nein!
-	move.b	d0,d1			;ja
+	move.b	(a0)+,d0	          ;Patternnummer holen
+	cmp.b	d0,d1	          ;ist es die höchste ?
+	bhi.s	LenHigher	          ;nein!
+	move.b	d0,d1	          ;ja
 LenHigher:
 	dbf	d2,SongLenLoop
-	move.l	d1,d0			;Hoechste BlockNummer nach d0
-	addq	#1,d0			;plus 1
-	mulu	#1024,d0		;Laenge eines Block
+	move.l	d1,d0	  ;Hoechste BlockNummer nach d0
+	addq	#1,d0	  ;plus 1
+	mulu	#1024,d0	  ;Laenge eines Block
 	movem.l	(a7)+,d1-d7/a0-a6
 	add.l	d0,a0			;Zur Adresse der Songstr.
 	add.w	#600,a0			;Laenge der SongStr.
@@ -51,6 +51,7 @@ CalcIns:
 	clr.l	TrackPos		;zeiger auf pos
 	clr.l	PosCounter		;zeiger innehalb des pattern
 	rts
+
 fx_stop:
 	lea	$dff000,a0		;AMIGA
 	clr.w	PlayLock		;player sperren
@@ -61,52 +62,52 @@ fx_stop:
 	move.w	#$f,$96(A0)		;dma sperren
 	rts
 
-fx_play:				;HauptAbspielRoutine
+fx_play:			           ;HauptAbspielRoutine
 	movem.l	d0-d7/a0-a6,-(a7)
-	addq.w	#1,Timer		;zähler erhöhen
-	cmp.w	#6,Timer		;schon 6?
-	bne.s	CheckEffects		;wenn nicht -> effekte
-	clr.w	Timer			;sonst zähler löschen
-	bsr 	PlaySound		;und sound spielen
+	addq.w	#1,Timer	         ;zähler erhöhen
+	cmp.w	#6,Timer	         ;schon 6?
+	bne.s	CheckEffects	         ;wenn nicht -> effekte
+	clr.w	Timer	         ;sonst zähler löschen
+	bsr	PlaySound	         ;und sound spielen
 NoPlay:	movem.l	(a7)+,d0-d7/a0-a6
 	rts
 
 CheckEffects:
-	moveq	#3,d7			;4 kanäle
+	moveq	#3,d7		;4 voices
 	lea	StepControl0,a4
 	lea	ChannelData0(pc),a6	;zeiger auf daten für 0
-	lea	$dff0a0,a5		;Kanal 0
+	lea	$dff0a0,a5		; Voice A
 EffLoop:
 	movem.l	d7/a5,-(a7)
-	bsr.s	MakeEffekts		;Effekt spielen
+	bsr.s	MakeEffekts		; Effekt spielen
 	movem.l	(a7)+,d7/a5
 NoEff:
-	add	#8,a4
-	add	#$10,a5			;nächster Kanal
-	add	#22,a6			;Nächste KanalDaten
+	addq	#8,a4
+	add	#$10,a5	            ; nächster Kanal
+	add	#22,a6	            ; Nächste KanalDaten
 	dbf	d7,EffLoop
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
 
 MakeEffekts:
-	move	(A4),d0
+	move	(a4),d0
 	beq.s	NoStep
 	bmi.s	StepItUp
-	add	d0,2(A4)
-	move	2(A4),d0
-	move	4(A4),d1
+	add	d0,2(a4)
+	move	2(a4),d0
+	move	4(a4),d1
 	cmp	d0,d1
 	bhi.s	StepOk
 	move	d1,d0
 StepOk:
 	move	d0,6(a5)
-	MOVE	D0,2(A4)
+	move	d0,2(a4)
 	rts
 
 StepItUp:
-	add	d0,2(A4)
-	move	2(A4),d0
-	move	4(A4),d1
+	add	d0,2(a4)
+	move	2(a4),d0
+	move	4(a4),d1
 	cmp	d0,d1
 	blt.s	StepOk
 	move	d1,d0
@@ -147,7 +148,7 @@ StepFinder:
 	tst	d4
 	beq.s	NoNegIt
 	neg	d2
-NoNegIt:	
+NoNegIt:
 	move	d2,(a4)
 	moveq	#0,d2
 	move.b	3(a6),d2
@@ -176,7 +177,7 @@ NoNegStep:
 EndStepUpFind:
 	move	d0,4(A4)
 	rts
-	
+
 SetStepDown:
 	st	d4
 	bra.s	StepFinder
@@ -220,7 +221,7 @@ Arpe2:	clr.l	d0
 	bra.s	Arpe4
 
 Arpe3:	move.w	16(a6),d2
-	
+
 Arpe6:	move.w	d2,6(a5)
 	rts
 
@@ -267,7 +268,7 @@ SoundHandleLoop:
 	add.l	#$10,a5			;nächster Kanal
 	add.l	#22,a6			;nächste Daten
 	dbf	d7,SoundHandleLoop	;4*
-	
+
 	move	DmaCon(pc),d0		;DmaBits
 	bset	#15,d0			;Clear or Set Bit setzen
 	move.w	d0,$dff096		;DMA ein!
@@ -310,16 +311,16 @@ PlayNote:
 	move.l	(a0,d1.l),(a6)		;Aktuelle Note holen
 NoGetNote:
 	addq.l	#4,d1			;PattenOffset + 4
-	clr.l	d2
+	moveq	#0,d2
 	cmp	#-3,(A6)		;Ist Note = 'PIC' ?
 	beq	NoInstr2		;wenn ja -> ignorieren
-	move.b	2(a6),d2		;Instr Nummer holen	
+	move.b	2(a6),d2		;Instr Nummer holen
 	and.b	#$f0,d2			;ausmaskieren
 	lsr.b	#4,d2			;ins untere Nibble
 	tst.b	d2			;kein Intrument ?
-	beq.W	NoInstr2		;wenn ja -> überspringen
-	
-	clr.l	d3
+	beq.w	NoInstr2		;wenn ja -> überspringen
+
+	moveq	#0,d3
 	lea.l	Instruments(pc),a1	;Instr. Tabelle
 	move.l	d2,d4			;Instrument Nummer
 	subq	#1,d2
@@ -332,20 +333,20 @@ NoGetNote:
 	tst	d3			;kein Repeat?
 	beq.s	NoRepeat		;Nein!
 					;Doch!
-	
+
 	move.l	4(a6),d2		;akt. Instr.
 	add.l	d3,d2			;Repeat dazu
 	move.l	d2,10(a6)		;Repeat Instr.
 	move.w	6(a3,d4),14(a6)		;rep laenge
-	move.w	18(a6),d3 		;Volume in HardReg.
+	move.w	18(a6),d3		;Volume in HardReg.
 	bra.s	NoInstr
 
 NoRepeat:
-	move.l	4(a6),d2		;Instrument	
+	move.l	4(a6),d2		;Instrument
 	add.l	d3,d2			;rep Offset
 	move.l	d2,10(a6)		;in Rep. Pos.
 	move.w	6(a3,d4.l),14(a6)	;rep Laenge
-	move.w	18(a6),d3 		;Volume in Hardware
+	move.w	18(a6),d3		;Volume in Hardware
 
 CheckPic:
 NoInstr:
@@ -357,9 +358,9 @@ NoInstr:
 	bne.W	SetVolume2
 	moveq	#0,d2
 	move.b	3(a6),d2
-	sub	d2,d3		
+	sub	d2,d3
 	tst	d3
-	bpl	SetVolume2	
+	bpl	SetVolume2
 	clr	d3
 	bra.W	SetVolume2
 ChangeUpVolume:
@@ -372,16 +373,16 @@ ChangeUpVolume:
 	move	#64,d3
 SetVolume2:
 	move	d3,8(a5)
-	
+
 NoInstr2:
 	cmp	#-3,(a6)		;Ist Note = 'PIC' ?
-	bne.s	NoPic		
+	bne.s	NoPic
 	clr	2(a6)			;wenn ja -> Note auf 0 setzen
-	bra.s	NoNote	
+	bra.s	NoNote
 NoPic:
 	tst	(a6)			;Note ?
 	beq.s	NoNote			;wenn 0 -> nicht spielen
-	
+
 	clr	(a4)
 	move.w	(a6),16(a6)		;eintragen
 	move.w	20(a6),$dff096		;dma abschalten
@@ -412,41 +413,41 @@ ArpeTable:
 	dc.l	Arpe1
 
 ChannelData0:
-	ds.l	5,0			;Daten für Note
-	dc.w	1			;DMA - Bit
-ChannelData1:	
-	ds.l	5,0			;u.s.w
+	ds.l	5,0		;Daten für Note
+	dc.w	1		;DMA - Bit
+ChannelData1:
+	ds.l	5,0		;u.s.w
 	dc.w	2
-ChannelData2:	
-	ds.l	5,0			;etc.
+ChannelData2:
+	ds.l	5,0		;etc.
 	dc.w	4
-ChannelData3:	
-	ds.l	5,0			;a.s.o
+ChannelData3:
+	ds.l	5,0		;a.s.o
 	dc.w	8
 Instruments:
-	ds.l	15,0			;Zeiger auf die 15 Instrumente
+	ds.l	15,0	 ;Zeiger auf die 15 Instrumente
 PosCounter:
-	dc.l	0			;Offset ins Pattern
+	dc.l	0	            ;Offset ins Pattern
 TrackPos:
-	dc.l	0			;Position Counter
+	dc.l	0		;Position Counter
 Timer:
-	dc.w	0			;Zähler 0-5
+	dc.w	0		;Zähler 0-5
 DmaCon:
-	dc.w	0			;Zwischenspeicher für DmaCon
+	dc.w	0	   ;Zwischenspeicher für DmaCon
 AnzPat:
-	dc.w	1			;Anzahl Positions
+	dc.w	1		;Anzahl Positions
 PlayLock:
-	dc.w	0			;Flag fuer 'Sound erlaubt'
+	dc.w	0	     ;Flag fuer 'Sound erlaubt'
 SongPointer:
 	dc.l	0
 
 Reserve:
 	dc.w	856,856,856,856,856,856,856,856,856,856,856,856
 NoteTable:
-	dc.w	856,808,762,720,678,640,604,570,538,508,480,453   ;1.Okt
-	dc.w	428,404,381,360,339,320,302,285,269,254,240,226   ;2.Okt
-	dc.w	214,202,190,180,170,160,151,143,135,127,120,113	  ;3.Okt
-	dc.w	113,113,113,113,113,113,113,113,113,113,113,113	  ;Reserve
+	dc.w	856,808,762,720,678,640,604,570,538,508,480,453 ;1.Okt
+	dc.w	428,404,381,360,339,320,302,285,269,254,240,226 ;2.Okt
+	dc.w	214,202,190,180,170,160,151,143,135,127,120,113 ;3.Okt
+	dc.w	113,113,113,113,113,113,113,113,113,113,113,113 ;Reserve
 	dc.w	-1
 
-SoundFXTune:
+;; SoundFXTune:

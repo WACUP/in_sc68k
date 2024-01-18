@@ -388,11 +388,10 @@ static void mix_one(paula_t * const paula,
   /* $$$ FIXME
    * Dunno exactly what if volume is not in proper range [0..64]
    */
-  vol = p[9] & 127;
+  vol = p[9];
   if (vol >= 64)
     vol = 64;
   vol <<= 1;
-
 
   per = ( p[6] << 8 ) + p[7];
   if (!per) per = 1;                    /* or is it +1 for all ?? */
@@ -497,10 +496,10 @@ typedef struct {
 } paulav_dbg_t;
 
 static
-void paula_dbg(paulav_dbg_t * d, paula_t * const paula, int i)
+void paula_dbg(paulav_dbg_t * d, const paula_t * const paula, int i)
 {
-  paulav_t * const w   = paula->voice+i;
-  u8       * const p   = paula->map+PAULA_VOICE(i);
+  const paulav_t * const w   = paula->voice+i;
+  const u8	 * const p   = paula->map+PAULA_VOICE(i);
   const int     ct_fix = paula->ct_fix;
 
   d->on   = ((paula->dmacon >> 9) & (paula->dmacon >> i) & 1);
@@ -508,10 +507,8 @@ void paula_dbg(paulav_dbg_t * d, paula_t * const paula, int i)
   d->end  = w->end >> ct_fix;
   d->start  = w->start >> ct_fix;
   d->len  = d->end-w->start;
-  d->vol = p[9] & 127;
-  /* if (d->vol >= 64) d->vol = 64; */
+  d->vol   = p[9] & 255;
   d->per = ( p[6] << 8 ) + p[7];
-  /* if (!d->per) d->per = 1; */
 }
 
 #endif

@@ -207,7 +207,7 @@ typedef struct {
 
 /** Paula emulator data structure. */
 typedef struct {
-  u8       map[256];   /**< Paula regiters mapping.              */
+  u8	   map[256];   /**< Paula registers mapping.             */
   paulav_t voice[4];   /**< Paula voices (4 channels).           */
   int      engine;     /**< @ref paula_engine_e "Engine id".     */
   int      ct_fix;     /**< Fixed precision used by counters in

@@ -215,7 +215,8 @@ In_Module plugin =
 
   0,0,0,0,0,0,0,0,0,     /* visualization calls filled in by winamp */
   0,0,                   /* dsp calls filled in by winamp */
-  NULL,                  /* set equalizer */
+  //NULL,                  /* set equalizer */
+  IN_INIT_WACUP_EQSET_EMPTY
   NULL,                  /* setinfo call filled in by winamp */
   0,                     /* out_mod filled in by winamp */
   NULL,	// api_service
@@ -370,11 +371,9 @@ void about(HWND hwnd)
 #ifdef DEBUG
              L"\n" " !!! DEBUG Build !!! "
 #endif
-             L"\nWACUP related modifications by\nDarren "
-             L"Owen aka DrO (%hs)\n\nBuild date: %hs",
-             (wchar_t*)plugin.description,
-             sc68_versionstr(), file68_versionstr(),
-             WACUP_COPYRIGHT, __DATE__);
+             L"\nWACUP related modifications by\n" WACUP_AUTHOR_STRW
+             L" (%hs)\n\nBuild date: %hs", (wchar_t*)plugin.description,
+             sc68_versionstr(), file68_versionstr(), WACUP_COPYRIGHT, __DATE__);
 
   AboutMessageBox(hwnd, message, L"sc68 (Atari ST & Amiga) Player");
 }
@@ -397,32 +396,16 @@ static
  ****************************************************************************/
 int isourfile(const in_char * file)
 {
-  int ret = 0;
   if (file && *file && !IsPathURLA(file)) {
     // to save doing some of the things with making
     // the plug-in fully unicode for now this'll do
     // just enough to get a valid extension to use
     const wchar_t *uri = (LPCWSTR)file;
-  if (uri && *uri) {
-      if (SameStrN(uri,L"sc68:",5))
-        ret = 1;
-    else {
-        const wchar_t * ext = GetPathExtension(uri);
-        if (ext && *ext) ++ext; // skip over the .
-        if (ext && *ext &&
-            (
-                SameStrN(ext, L"sndh", 4)
-                || SameStrN(ext, L"snd", 3)
-#ifdef FILE68_Z
-                || SameStrN(ext, L"sc68.gz", 7)
-#endif
-                || SameStrN(ext, L"sc68", 4)
-            ))
-          ret = 1;
-    }
+    if (uri && *uri && SameStrN(uri,L"sc68:",5)) {
+      return 1;
   }
   }
-  return ret;
+  return 0;
 }
 
 /*****************************************************************************
@@ -1219,7 +1202,7 @@ int winampGetExtendedFileInfo(const char *uri, const char *data,
   }
   else if (SameStrA(data, "family"))
   {
-    if (uri && *uri && stristr(uri, ".gz"))
+    if (uri && *uri && SameStrA(uri, ".gz"))
     {
       strncpy(dest, "sc68 (Compressed) Audio File", max);
     }

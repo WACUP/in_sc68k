@@ -1,23 +1,28 @@
-;	SIDMon 2 replay routine
-;	adapted for sc68 by Gerald Schnabel <gschnabel@gmx.de>
+;;; SIDMon 2 replay routine
+;;; adapted for sc68 by Gerald Schnabel <gschnabel@gmx.de>
 
-	include "lib/org.s"
+	opt	o+,a+,p+
 
 	bra.w	initmuzak
-	rts
-	rts
+	bra.w	killmuzak
 	bra.w	playmuzak
+
+killmuzak:
+	clr.w	$dff0a8		; Volumes OFF
+	clr.w	$dff0b8
+	clr.w	$dff0c8
+	clr.w	$dff0d8
+	move.w	#$f,$dff096		; DMAs OFF
+	bset	#$1,$bfe001		; filter off
+	rts
 
 initmuzak:
 	movem.l	d0-d7/a0-a6,-(a7)
-	bset	#$1,$bfe001
-	lea	$dff000,a6
+	;;
+	lea	song(pc),a6
+	move.l	a0,(a6)
 
-	move.w	#$0,$a8(a6)
-	move.w	#$0,$b8(a6)
-	move.w	#$0,$c8(a6)
-	move.w	#$0,$d8(a6)
-	move.w	#$f,$96(a6)
+	bsr.s	killmuzak
 
 	moveq	#$0,d6
 	lea	header(pc),a0
@@ -39,7 +44,7 @@ initmuzak:
 	clr.b	6(a2)
 
 	moveq	#$a,d0
-addloop:move.l	(a0)+,d1
+addloop:	move.l	(a0)+,d1
 	add.l	(a1)+,d1
 	move.l	d1,(a0)
 	dbf	d0,addloop
@@ -88,17 +93,17 @@ calcaddloop:
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
 
-header:		dc.l	$0
+header:	dc.l	$0
 songlen:	dc.l	$0
 positions:	dc.l	$0
 ntransposes:	dc.l	$0
 itransposes:	dc.l	$0
-ins1:		dc.l	$0
+ins1:	dc.l	$0
 wavelists:	dc.l	$0
-arpeggiolists:	dc.l	$0
-vibratolists:	dc.l	$0
+arplists: dc.l	$0
+vibratolists: dc.l	$0
 sampletab:	dc.l	$0
-patternpointer:	dc.l	$0
+patternptr: dc.l	$0
 patterns:	dc.l	$0
 
 playmuzak:
@@ -150,7 +155,7 @@ raster:	cmp.b	$6(a6),d0
 	move.w	(a5),$96(a6)
 
 	move.b	$6(a6),d0
-raster2:cmp.b	$6(a6),d0
+raster2:	cmp.b	$6(a6),d0
 	beq.s	raster2
 
 	lea	voice1(pc),a2
@@ -248,7 +253,7 @@ checkmode:
 	clr.l	20(a0)
 	bra.s	nonegation
 
-noright:cmp.w	#$2,d4
+noright:	cmp.w	#$2,d4
 	bne.s	noleft
 	move.l	d2,20(a0)
 	bra.s	nonegation
@@ -261,7 +266,7 @@ nonegation:
 	lea	voice2-voice1(a1),a1
 	dbf	d0,negationloop
 
-	sub.w	#$10,a3
+	lea	-$10(a3),a3
 	moveq	#$3,d0
 joho:	move.l	(a3)+,a0
 	clr.w	26(a0)
@@ -280,7 +285,7 @@ findnote:
 	add.l	(a2),a1
 	move.b	(a1,d0.w),d2
 	add.w	d2,d2
-	move.l	patternpointer(pc),a1
+	move.l	patternptr(pc),a1
 	move.w	(a1,d2.w),d2
 	add.l	patterns(pc),d2
 	move.l	d2,64(a2)
@@ -294,7 +299,7 @@ findnote:
 	clr.b	69(a2)
 	rts
 
-getnote:move.l	64(a2),a1
+getnote:	move.l	64(a2),a1
 	bsr.s	getnote2
 	move.l	a1,64(a2)
 
@@ -405,7 +410,7 @@ noinschange:
 	moveq	#$0,d5
 	move.b	4(a1),d5
 	lsl.w	#$4,d5
-	move.l	arpeggiolists(pc),a1
+	move.l	arplists(pc),a1
 	moveq	#$0,d1
 	move.b	(a1,d5.w),d1
 	ext.w	d1
@@ -442,7 +447,7 @@ doeffect:
 notlow:	cmp.w	#$1680,10(a2)
 	blt.s	pitchok
 	move.w	#$1680,10(a2)
-pitchok:move.w	10(a2),6(a6,d4.w)
+pitchok:	move.w	10(a2),6(a6,d4.w)
 	rts
 
 dopitchbend:
@@ -455,7 +460,7 @@ dopitchbend:
 	bne.s	pitchdelay
 	ext.w	d0
 	add.w	d0,58(a2)
-nopitch:rts
+nopitch:	rts
 
 pitchdelay:
 	addq.b	#$1,55(a2)
@@ -552,7 +557,7 @@ arpeggio:
 
 myatab:	dc.l	$0
 
-pitchup:move.w	52(a2),d0
+pitchup:	move.w	52(a2),d0
 	neg.w	d0
 	move.w	d0,58(a2)
 	rts
@@ -693,7 +698,7 @@ notasame:
 	move.b	4(a4),d7
 	lsl.w	#$4,d7
 	add.w	d6,d7
-	move.l	arpeggiolists(pc),a4
+	move.l	arplists(pc),a4
 	move.b	(a4,d7.w),d6
 	ext.w	d6
 	add.w	32(a2),d6
@@ -721,7 +726,7 @@ nowdelay:
 	cmp.b	37(a2),d6
 	bne.s	notsame
 	move.b	#-$1,37(a2)
-notsame:addq.b	#$1,37(a2)
+notsame:	addq.b	#$1,37(a2)
 	move.w	36(a2),d6
 	clr.w	d7
 	move.b	(a4),d7
@@ -750,7 +755,7 @@ doadsrcurve:
 	move.w	12(a2),d0
 	lsr.w	#$2,d0
 	move.w	d0,8(a6,d4.w)
-	rts 
+	rts
 
 doadsrcalc:
 	move.l	22(a2),a4
@@ -786,16 +791,16 @@ decay:	move.b	2(a4),d6
 	cmp.w	12(a2),d6
 	blt.s	returnadsr
 	move.w	d6,12(a2)
-nodecay:subq.w	#$1,18(a2)
+nodecay:	subq.w	#$1,18(a2)
 	rts
 
-sustain:move.b	4(a4),d6
+sustain:	move.b	4(a4),d6
 	cmp.w	20(a2),d6
 	bne.s	contsustain
 	subq.w	#$1,18(a2)
 	rts
 
-release:move.b	5(a4),d6
+release:	move.b	5(a4),d6
 	move.b	6(a4),d7
 	beq.s	norelease
 	sub.w	d7,12(a2)
@@ -956,16 +961,15 @@ playperiods:
 
 waveadds:	ds.l	4,0
 
-song:		dc.l	muzakmodule
+song:	dc.l	0
 sampleno:	dc.w	0
 midimode:	dc.w	0
-length:		dc.b	0
-speed:		dc.b	0
-currentpos:	dc.b	0
-currentnot:	dc.b	0
-currentrast:	dc.b	0
+length:	dc.b	0
+speed:	dc.b	0
+curpos:	dc.b	0
+curnot:	dc.b	0
+currast:	dc.b	0
 patlength:	dc.b	0
-currentrast2:	dc.b	0
+currast2:	dc.b	0
 
-		even
-muzakmodule:
+	even

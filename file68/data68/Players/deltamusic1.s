@@ -1,95 +1,116 @@
-;	Delta Music 1 replay routine
-;	adapted for sc68 by Gerald Schnabel <gschnabel@gmx.de>
+;;; Delta Music 1 replay routine
+;;; adapted for sc68 by Gerald Schnabel <gschnabel@gmx.de>
+;;; PIC version by Ben G.
 
-	include "lib/org.s"
-	
+	opt	o-,p+,a+
+
 	bra.w	DM_init
-	rts
-	rts
+	bra.w	DM_kill
 	bra.w	DM_play
 
-; -------------------------------------------
-; ----      DELTA MUSIC REPLAY V1.0      ----
-; ----      ~~~~~~~~~~~~~~~~~~~~~~~      ----
-; ----                                   ----
-; ----  coded by : Bent Nielsen (SHOGUN) ----
-; ----             Kyradservej 19B       ----
-; ----             8700 Horsens          ----
-; ----             Denmark               ----
-; ----       tlf.  75-601-868            ----
-; -------------------------------------------
-; ---- contact me if you want the editor ----
-; ---- sources coded .........           ----
-; -------------------------------------------
+DM_music:	ds.l	1
+
+DM_kill:	;; ---------------------------.
+	clr.w	$dff0a8		; Volume to zero
+	clr.w	$dff0b8		;
+	clr.w	$dff0c8		;
+	clr.w	$dff0d8		;
+	move.w	#$f,$dff096	; Disable audio DMAs
+	bclr	#1,$bfe001	; Filter Off
+	rts			;
+	;; ---------------------------'
+
+;;; -------------------------------------------
+;;; ----      DELTA MUSIC REPLAY V1.0      ----
+;;; ----      ~~~~~~~~~~~~~~~~~~~~~~~      ----
+;;; ----                                   ----
+;;; ----  coded by : Bent Nielsen (SHOGUN) ----
+;;; ----             Kyradservej 19B       ----
+;;; ----             8700 Horsens          ----
+;;; ----             Denmark               ----
+;;; ----       tlf.  75-601-868            ----
+;;; -------------------------------------------
+;;; ---- contact me if you want the editor ----
+;;; ---- sources coded .........           ----
+;;; -------------------------------------------
 
 speed = 6	; play speed
 
-; ////  hardware  \\\\
-h_sound     = 0
-h_length    = 4
-h_frequency = 6
-h_volume    = 8
+;;; ////  hardware  \\\\
+	RsReset
+h_sound:		rs.l	1	; 0
+h_length:		rs.w	1	; 4
+h_period:		rs.w	1	; 6
+h_volume:		rs.w	1	; 8
 
-; ////  instrument  \\\\
-s_attack_step     = 0
-s_attack_delay    = 1
-s_decay_step      = 2
-s_decay_delay     = 3
-s_sustain         = 4
-s_release_step    = 6
-s_release_delay   = 7
-s_volume          = 8
-s_vibrator_wait   = 9
-s_vibrator_step   = 10
-s_vibrator_length = 11
-s_bendrate        = 12
-s_portamento      = 13
-s_sample          = 14
-s_table_delay     = 15
-s_arpeggio        = 16
-s_sound_length    = 24
-s_repeat          = 26
-s_repeat_length   = 28
-s_table           = 30
-s_sounddata       = 78
+;;; ////  instrument  \\\\
+s_attack_step	= 0
+s_attack_delay	= 1
+s_decay_step	= 2
+s_decay_delay	= 3
+s_sustain		= 4
+s_release_step	= 6
+s_release_delay	= 7
+s_volume		= 8
+s_vibrator_wait	= 9
+s_vibrator_step	= 10
+s_vibrator_length	= 11
+s_bendrate	= 12
+s_portamento	= 13
+s_sample		= 14
+s_table_delay	= 15
+s_arpeggio	= 16
+s_sound_length	= 24
+s_repeat		= 26
+s_repeat_length	= 28
+s_table		= 30
+s_sounddata	= 78
 
 ; ////  channel  \\\\
-c_hardware        = 0
-c_dma             = 4
-c_sounddata       = 6
-c_frequency       = 10
-c_sound_table     = 12
-c_sound_table_cnt = 16
-c_sound_table_del = 17
-c_track           = 18
-c_track_cnt       = 22
-c_block           = 24
-c_block_cnt       = 28
-c_vibrator_wait   = 32
-c_vibrator_length = 33
-c_vibrator_pos    = 34
-c_vibrator_cmp    = 35
-c_vibrator_freq   = 36
-c_old_frequency   = 38
-c_frequency_data  = 40
-c_actual_volume   = 41
-c_attack_delay    = 42
-c_decay_delay     = 43
-c_sustain         = 44
-c_release_delay   = 46
-c_play_speed      = 47
-c_bendrate_freq   = 48
-c_transpose       = 50
-c_status          = 51
-c_arpeggio_cnt    = 52
-c_arpeggio_data   = 53
-c_arpeggio_on     = 54
-c_effect_number   = 55
-c_effect_data     = 56
+c_hardware	= 0
+c_dma		= 4
+c_sounddata	= 6
+c_frequency	= 10
+c_sound_table	= 12
+c_sound_table_cnt	= 16
+c_sound_table_del	= 17
+c_track		= 18
+c_track_cnt	= 22
+c_block		= 24
+c_block_cnt	= 28
+c_vibrator_wait	= 32
+c_vibrator_length	= 33
+c_vibrator_pos	= 34
+c_vibrator_cmp	= 35
+c_vibrator_freq	= 36
+c_old_frequency	= 38
+c_frequency_data	= 40
+c_actual_volume	= 41
+c_attack_delay	= 42
+c_decay_delay	= 43
+c_sustain		= 44
+c_release_delay	= 46
+c_play_speed	= 47
+c_bendrate_freq	= 48
+c_transpose	= 50
+c_status		= 51
+c_arpeggio_cnt	= 52
+c_arpeggio_data	= 53
+c_arpeggio_on	= 54
+c_effect_number	= 55
+c_effect_data	= 56
 ; next 57
 
-DM_play:
-	movem.l	d0-d7/a0-a6,-(a7)
+dma_wait:	bsr	dma_w8
+dma_w8:	move.b	$DFF006,d0
+ras_w8:	cmp.b	$DFF006,d0
+	beq.s	ras_w8
+	rts
+
+DM_play:	;; ---------------------------.
+	movem.l	d0-d7/a0-a6,-(a7)	;
+	lea	base(pc),a3	; The nase
+	basereg	base,a3		;
 	lea	channel1(pc),a6
 	bsr	DM_calc_frequency
 	lea	channel2(pc),a6
@@ -100,10 +121,8 @@ DM_play:
 	bsr	DM_calc_frequency
 
 	move.w	#$800f,$dff096
-DM_sample_handler:
-	move.w	#200,d0
-DM_swait:
-	dbra	d0,DM_swait
+	bsr	dma_wait
+	bsr	dma_wait
 
 	lea	channel1(pc),a6
 	move.l	c_hardware(a6),a4
@@ -166,7 +185,7 @@ DM_calc_frequency:
 
 	subq.b	#1,c_play_speed(a6)
 	bne	DM_block_con
-	move.b	play_speed,c_play_speed(a6)
+	move.b	play_speed(pc),c_play_speed(a6)
 
 	tst.l	c_block_cnt(a6)
 	bne.s	DM_check_block
@@ -290,7 +309,7 @@ DM_sound_read_c:
 	bra.s	DM_sound_read_again
 DM_sound_new_speed:
 	and.b	#127,d7
-	move.b	d7,s_table_delay(a5)	
+	move.b	d7,s_table_delay(a5)
 	addq.b	#1,c_sound_table_cnt(a6)
 	bra.s	DM_sound_read_again
 
@@ -392,13 +411,13 @@ DM_rate_minus:
 
 DM_effect_handler:
 	moveq	#0,d0
-	moveq	#0,d1
+	moveq	#$1f,d1
 	move.b	c_effect_data(a6),d0
-	move.b	c_effect_number(a6),d1
+	and.b	c_effect_number(a6),d1
 	lea	effect_table(pc),a1
-	and.b	#$1f,d1
-	asl.l	#2,d1
-	move.l	(a1,d1.w),a1
+	add.w	d1,d1
+	adda.w	d1,a1
+	adda.w	(a1),a1
 	jsr	(a1)
 
 DM_arpeggio_handler:
@@ -432,7 +451,7 @@ DM_store_no_port:
 	clr.w	c_frequency(a6)
 DM_store_port:
 	add.w	c_vibrator_freq(a6),d0
-	move.w	d0,h_frequency(a4)
+	move.w	d0,h_period(a4)
 
 DM_volume_handler:
 	moveq	#0,d1		; actual volume
@@ -516,11 +535,13 @@ DM_volume_exit:
 ; ----  INIT MUSIC  ----
 
 all_check = 0
-trk1      = 4
+trk1	= 4
 
 
-DM_init:
-	lea	DM_data(pc),a0
+DM_init:	;; ---------------------------.
+	movem.l	d0-a6,-(a7)	;
+	lea	base(pc),a3	;
+	move.l	a0,DM_music(a3)	; Save music pointer
 	lea	26*4(a0),a0
 	lea	track1(pc),a1
 	moveq	#24,d7
@@ -531,8 +552,8 @@ DM_init_loop:
 	moveq	#23,d6
 	lea	track1+(24*4)(pc),a1
 DM_init_loop2:
-	lea	DM_data(pc),a0
-	lea	4(a0),a0
+	move.l	DM_music(pc),a0
+	addq.w	#4,a0
 	move.l	d6,d7
 DM_init_loop3:
 	move.l	(a0)+,d0
@@ -553,21 +574,26 @@ DM_init_loop3:
 	add.l	#16,a0
 	lea	channel4(pc),a6
 	bsr.s	DM_setup
-	move.w	#$8001,channel1+c_dma
-	move.w	#$8002,channel2+c_dma
-	move.w	#$8004,channel3+c_dma
-	move.w	#$8008,channel4+c_dma
-	move.l	track1(pc),channel1+c_track
-	move.l	track2(pc),channel2+c_track
-	move.l	track3(pc),channel3+c_track
-	move.l	track4(pc),channel4+c_track
+	;;
+	move.w	#$8001,channel1+c_dma(a3)
+	move.w	#$8002,channel2+c_dma(a3)
+	move.w	#$8004,channel3+c_dma(a3)
+	move.w	#$8008,channel4+c_dma(a3)
+	move.l	track1(pc),channel1+c_track(a3)
+	move.l	track2(pc),channel2+c_track(a3)
+	move.l	track3(pc),channel3+c_track(a3)
+	move.l	track4(pc),channel4+c_track(a3)
+	;;
+	movem.l	(a7)+,d0-a6	;
+	;; ---------------------------'
 	rts
 
 DM_setup:
 	move.l	a0,c_hardware(a6)
 	move.w	#16,h_length(a0)
 	clr.w	h_volume(a0)
-	move.l	#safe_zero,c_sounddata(a6)
+	pea	safe_zero(pc)
+	move.l	(a7)+,c_sounddata(a6)
 	clr.w	c_frequency(a6)
 	move.l	snd_table(pc),d0
 	add.l	#16,d0
@@ -592,7 +618,7 @@ eff0:
 eff1:
 	and.b	#15,d0			; set play speed
 	beq.s	eff1_exit
-	move.b	d0,play_speed
+	move.b	d0,play_speed(a3)
 eff1_exit:
 	rts
 eff2:
@@ -602,12 +628,12 @@ eff3:
 	add.w	d0,c_bendrate_freq(a6)	; slide freq down
 	rts
 eff4:
-;	tst.b	d0
-;	beq	led_off
-;	bset	#1,$bfe001		; led on/off
-;	rts
+	tst.b	d0
+	beq	led_off
+	bset	#1,$bfe001		; led on/off
+	rts
 led_off:
-;	bclr	#1,$bfe001
+	bclr	#1,$bfe001
 	rts
 eff5:
 	move.b	d0,s_vibrator_wait(a5)	; set vibrator wait
@@ -710,17 +736,21 @@ eff1E:
 
 
 effect_table:
-	dc.l	eff0,eff1,eff2,eff3,eff4,eff5,eff6,eff7
-	dc.l	eff8,eff9,effA,effB,effC,effD,effE,effF
-	dc.l	eff10,eff11,eff12,eff13,eff14,eff15,eff16,eff17
-	dc.l	eff18,eff19,eff1A,eff1B,eff1C,eff1D,eff1E,eff0
+	dc.w	eff0-*,eff1-*,eff2-*,eff3-*
+	dc.w	eff4-*,eff5-*,eff6-*,eff7-*
+	dc.w	eff8-*,eff9-*,effA-*,effB-*
+	dc.w	effC-*,effD-*,effE-*,effF-*
+	dc.w	eff10-*,eff11-*,eff12-*,eff13-*
+	dc.w	eff14-*,eff15-*,eff16-*,eff17-*
+	dc.w	eff18-*,eff19-*,eff1A-*,eff1B-*
+	dc.w	eff1C-*,eff1D-*,eff1E-*,eff0-*
 
 play_speed:
 	dc.b	speed
 	even
 safe_zero:
 	dcb.b	16,0
-
+base:
 freq_table:
  dc.w	0000,6848,6464,6096,5760,5424,5120,4832,4560,4304,4064,3840
  dc.w	3616,3424,3232,3048,2880,2712,2560,2416,2280,2152,2032,1920
@@ -772,21 +802,20 @@ channel3:
 channel4:
 	dcb.b	channel2-channel1,0
 
-track1:
-	dc.l	0
-track2:
-	dc.l	0
-track3:
-	dc.l	0
-track4:
-	dc.l	0
-blocks:
-	dc.l	0
+track1:	dc.l	0
+track2:	dc.l	0
+track3:	dc.l	0
+track4:	dc.l	0
+blocks:	dc.l	0
 
 snd_table:
 	dcb.l	20,0
-
-;data:
 	dcb.b	2,0
 
-DM_data:
+
+;;; Local Variables:
+;;; mode: asm
+;;; indent-tabs-mode: t
+;;; tab-width: 10
+;;; comment-column: 40
+;;; End:
