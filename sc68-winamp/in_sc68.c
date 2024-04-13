@@ -191,7 +191,7 @@ In_Module plugin =
   0,                          /* hDllInstance (filled in by winamp) */
   NULL,                       /* filled in by GetFileExtensions later */
   0,                          /* is_seekable */ // TODO
-  1,                                  /* uses output plug-in system */
+  1,                          /* uses output plug-in system */
 
   config,
   about,
@@ -403,7 +403,7 @@ int isourfile(const in_char * file)
     const wchar_t *uri = (LPCWSTR)file;
     if (uri && *uri && SameStrN(uri,L"sc68:",5)) {
       return 1;
-  }
+    }
   }
   return 0;
 }
@@ -894,150 +894,150 @@ void create_sc68(void)
   static sc68_init_t init68;
   if (!init68.argv) {
 #ifndef NDEBUG
-  const int debug =
+    const int debug =
 #ifdef DEBUG
-    1
+      1
 #else
-    0
+      0
 #endif
-    ;
+      ;
 #endif
 
     //memset(&init68,0,sizeof(init68));
-  init68.argv = argv;
-  init68.argc = sizeof(argv) / sizeof(*argv);
+    init68.argv = argv;
+    init68.argc = sizeof(argv) / sizeof(*argv);
 #ifndef NDEBUG
-  wasc68_cat = msg68_cat("winamp", "winamp input plugin", debug);
-  init68.debug_set_mask = debug << wasc68_cat;
-  init68.debug_clr_mask = 0;
-  init68.msg_handler = (sc68_msg_t) msgfct;
+    wasc68_cat = msg68_cat("winamp", "winamp input plugin", debug);
+    init68.debug_set_mask = debug << wasc68_cat;
+    init68.debug_clr_mask = 0;
+    init68.msg_handler = (sc68_msg_t) msgfct;
 #else
-  wasc68_cat = msg68_NEVER;
-  init68.debug_clr_mask = -1;
+    wasc68_cat = msg68_NEVER;
+    init68.debug_clr_mask = -1;
 #endif
     //init68.flags.no_load_config = 1;      /* disable config load */
-  sc68_init(&init68);
+    sc68_init(&init68);
 
-  /* sc68 winamp init */
+    /* sc68 winamp init */
 #if 0
-  option68_append(opts, sizeof(opts)/sizeof(*opts));
-  option68_iset(option68_get("ufi",opt68_ALWAYS),0,opt68_ALWAYS,opt68_CFG);
-  option68_iset(option68_get("hook",opt68_ALWAYS),1,opt68_ALWAYS,opt68_CFG);
-  sc68_cntl(0,SC68_CONFIG_LOAD);
+    option68_append(opts, sizeof(opts)/sizeof(*opts));
+    option68_iset(option68_get("ufi",opt68_ALWAYS),0,opt68_ALWAYS,opt68_CFG);
+    option68_iset(option68_get("hook",opt68_ALWAYS),1,opt68_ALWAYS,opt68_CFG);
+    sc68_cntl(0,SC68_CONFIG_LOAD);
 #endif
 
-  /* clear and init private */
+    /* clear and init private */
 #ifdef USE_LOCK
-  g_lock = CreateMutex(NULL, FALSE, NULL);
+    g_lock = CreateMutex(NULL, FALSE, NULL);
 #endif
 
     /* clear and init cache */
-  wasc68_cache_init();
+    wasc68_cache_init();
 
-  /* Hook messages */
-  /* mw_hook(); */
+    /* Hook messages */
+    /* mw_hook(); */
 
 #ifdef WITH_API_SERVICE
-  /* Get WASABI service */
-  if (!g_service) {
-    g_service = (api_service *)
+    /* Get WASABI service */
+    if (!g_service) {
+      g_service = (api_service *)
         SendMessage(plugin.hMainWindow,WM_WA_IPC,0,IPC_GET_API_SERVICE);
     if (g_service == (api_service *)1)
       g_service = 0;
-  }
+    }
 
-  static int fcc[] = {
-    WaSvc::NONE,
-    WaSvc::UNIQUE,
-    WaSvc::OBJECT,
-    WaSvc::CONTEXTCMD,
-    WaSvc::DEVICE,
-    WaSvc::FILEREADER,
-    WaSvc::FILESELECTOR,
-    WaSvc::STORAGEVOLENUM,
-    WaSvc::IMAGEGENERATOR,
-    WaSvc::IMAGELOADER,
-    WaSvc::IMAGEWRITER,
-    WaSvc::ITEMMANAGER,
-    WaSvc::PLAYLISTREADER,
-    WaSvc::PLAYLISTWRITER,
-    WaSvc::MEDIACONVERTER,
-    WaSvc::MEDIACORE,
-    WaSvc::MEDIARECORDER,
-    WaSvc::SCRIPTOBJECT,
-    WaSvc::WINDOWCREATE,
-    WaSvc::XMLPROVIDER,
-    WaSvc::DB,
-    WaSvc::SKINFILTER,
-    WaSvc::METADATA,
-    WaSvc::METATAG,
-    WaSvc::EVALUATOR,
-    WaSvc::MINIBROWSER,
-    WaSvc::TOOLTIPSRENDERER,
-    WaSvc::XUIOBJECT,
-    WaSvc::STRINGCONVERTER,
-    WaSvc::ACTION,
-    WaSvc::COREADMIN,
-    WaSvc::DROPTARGET,
-    WaSvc::OBJECTDIR,
-    WaSvc::TEXTFEED,
-    WaSvc::ACCESSIBILITY,
-    WaSvc::ACCESSIBILITYROLESERVER,
-    WaSvc::EXPORTER,
-    WaSvc::COLLECTION,
-    WaSvc::REDIRECT,
-    WaSvc::FONTRENDER,
-    WaSvc::SRCCLASSFACTORY,
-    WaSvc::SRCEDITOR,
-    WaSvc::MP4AUDIODECODER,
-    WaSvc::PLAYLISTREADER_WA5,
-    WaSvc::PLAYLISTWRITER_WA5,
-    WaSvc::PLAYLISTHANDLER,
-    WaSvc::TAGPROVIDER,
-    WaSvc::NSVFACTORY,
-    -1
-  };
+    static int fcc[] = {
+      WaSvc::NONE,
+      WaSvc::UNIQUE,
+      WaSvc::OBJECT,
+      WaSvc::CONTEXTCMD,
+      WaSvc::DEVICE,
+      WaSvc::FILEREADER,
+      WaSvc::FILESELECTOR,
+      WaSvc::STORAGEVOLENUM,
+      WaSvc::IMAGEGENERATOR,
+      WaSvc::IMAGELOADER,
+      WaSvc::IMAGEWRITER,
+      WaSvc::ITEMMANAGER,
+      WaSvc::PLAYLISTREADER,
+      WaSvc::PLAYLISTWRITER,
+      WaSvc::MEDIACONVERTER,
+      WaSvc::MEDIACORE,
+      WaSvc::MEDIARECORDER,
+      WaSvc::SCRIPTOBJECT,
+      WaSvc::WINDOWCREATE,
+      WaSvc::XMLPROVIDER,
+      WaSvc::DB,
+      WaSvc::SKINFILTER,
+      WaSvc::METADATA,
+      WaSvc::METATAG,
+      WaSvc::EVALUATOR,
+      WaSvc::MINIBROWSER,
+      WaSvc::TOOLTIPSRENDERER,
+      WaSvc::XUIOBJECT,
+      WaSvc::STRINGCONVERTER,
+      WaSvc::ACTION,
+      WaSvc::COREADMIN,
+      WaSvc::DROPTARGET,
+      WaSvc::OBJECTDIR,
+      WaSvc::TEXTFEED,
+      WaSvc::ACCESSIBILITY,
+      WaSvc::ACCESSIBILITYROLESERVER,
+      WaSvc::EXPORTER,
+      WaSvc::COLLECTION,
+      WaSvc::REDIRECT,
+      WaSvc::FONTRENDER,
+      WaSvc::SRCCLASSFACTORY,
+      WaSvc::SRCEDITOR,
+      WaSvc::MP4AUDIODECODER,
+      WaSvc::PLAYLISTREADER_WA5,
+      WaSvc::PLAYLISTWRITER_WA5,
+      WaSvc::PLAYLISTHANDLER,
+      WaSvc::TAGPROVIDER,
+      WaSvc::NSVFACTORY,
+      -1
+    };
 
-  if (g_service) {
-    int i, n, j;
-    waServiceFactory * s;
-    DBG("SVC api <%p>\n", g_service);
+    if (g_service) {
+      int i, n, j;
+      waServiceFactory * s;
+      DBG("SVC api <%p>\n", g_service);
 
-    for (j=0; fcc[j] != -1; ++j) {
-      char cc[5];
-      cc[0] = fcc[j]>>24; cc[1] = fcc[j]>>16;
-      cc[2] = fcc[j]>> 8; cc[3] = fcc[j]; cc[4] = 0;
+      for (j=0; fcc[j] != -1; ++j) {
+        char cc[5];
+        cc[0] = fcc[j]>>24; cc[1] = fcc[j]>>16;
+        cc[2] = fcc[j]>> 8; cc[3] = fcc[j]; cc[4] = 0;
 
-      n = g_service->service_getNumServices(fcc[j]);
-      DBG("[%s] got %d service(s)\n", cc, n);
-      for (s = g_service->service_enumService(fcc[j], i=0);
-           s;
-           s = g_service->service_enumService(fcc[j], ++i)) {
-        DBG("[%s] #%02d SVC factory  '%s'\n",
-            cc, i, s ? s->getServiceName() : "(nil)");
+        n = g_service->service_getNumServices(fcc[j]);
+        DBG("[%s] got %d service(s)\n", cc, n);
+        for (s = g_service->service_enumService(fcc[j], i=0);
+             s;
+             s = g_service->service_enumService(fcc[j], ++i)) {
+          DBG("[%s] #%02d SVC factory  '%s'\n",
+              cc, i, s ? s->getServiceName() : "(nil)");
+        }
       }
-    }
 
-    s = g_service->service_getServiceByGuid(languageApiGUID);
-    if (s) {
-      DBG("service factory lang %p '%s'\n",
-          s, s?s->getServiceName():"(nil)");
-    } else {
-      DBG("don't have service factory lang\n");
-    }
+      s = g_service->service_getServiceByGuid(languageApiGUID);
+      if (s) {
+        DBG("service factory lang %p '%s'\n",
+            s, s?s->getServiceName():"(nil)");
+      } else {
+        DBG("don't have service factory lang\n");
+      }
 
-    s = g_service->service_getServiceByGuid(memMgrApiServiceGuid);
-    if (s) {
-      DBG("service factory memman %p '%s'\n",
-          s, s?s->getServiceName():"(nil)");
-    } else {
-      DBG("don't have service memman lang\n");
+      s = g_service->service_getServiceByGuid(memMgrApiServiceGuid);
+      if (s) {
+        DBG("service factory memman %p '%s'\n",
+            s, s?s->getServiceName():"(nil)");
+      } else {
+        DBG("don't have service memman lang\n");
+      }
+      //if (sf) WASABI_API_LNG = reinterpret_cast<api_language*>(sf->getInterface());
     }
-    //if (sf) WASABI_API_LNG = reinterpret_cast<api_language*>(sf->getInterface());
-  }
 #endif
-  DBG("init completed\n");
-}
+    DBG("init completed\n");
+  }
 }
 
 static
@@ -1127,7 +1127,7 @@ static int xinfo(const char *data, char *dest, size_t destlen,
     if (track == mi->trk.track) {
       snprintf(dest, destlen, "%u", mi->trk.time_ms);
     } else {
-    snprintf(dest, destlen, "%u", mi->dsk.time_ms);
+      snprintf(dest, destlen, "%u", mi->dsk.time_ms);
     }
     value = dest;
   }
@@ -1155,6 +1155,16 @@ static int xinfo(const char *data, char *dest, size_t destlen,
       value = I2AStr((br / 1000), dest, destlen);
     }
   }
+  else if (!strcasecmp(data, "formatinformation")) {
+    // TODO localise
+    StringCchPrintf(dest, destlen, "Length: %u seconds\nSamplerate: %d Hz\n"
+                    "Loop count: %d\n# of tracks: %d", ((track == mi->trk.track) ?
+                    mi->trk.time_ms : mi->dsk.time_ms) / 1000, sc68_cntl(g_sc68,
+                    SC68_GET_SPR), sc68_cntl(g_sc68, SC68_GET_LOOPS),
+                    sc68_cntl(g_sc68, SC68_GET_TRACKS));
+    value = dest;
+    //value = I2AStr(sc68_cntl(g_sc68, SC68_GET_SPR), dest, destlen);
+  }  
   /*else if (!strcasecmp(data,"")) {
     DBG("unhandled TAG '%s'\n", data);
   }*/

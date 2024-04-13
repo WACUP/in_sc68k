@@ -1523,6 +1523,18 @@ static int reset_emulators(sc68_t * sc68, const hwflags68_t hw)
       return SC68_ERROR;
     }
   }
+
+#ifdef NDEBUG
+  /* gB: divide-by-zero exception is also happening in some Amiga musics
+   *     (David Whittaker's Obliterator track #1 for one)
+   */
+  memptr[0] = 0x4e; memptr[1] = 0x73;
+  memptr[DIVIDE_VECTOR*4+0] = 0;
+  memptr[DIVIDE_VECTOR*4+1] = 0;
+  memptr[DIVIDE_VECTOR*4+2] = 0;
+  memptr[DIVIDE_VECTOR*4+3] = 0;
+#endif
+
   return SC68_OK;
 }
 
