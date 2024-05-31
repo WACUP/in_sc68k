@@ -213,7 +213,7 @@ In_Module plugin =
   setvolume,
   setpan,
 
-  0,0,0,0,0,0,0,0,0,     /* visualization calls filled in by winamp */
+  IN_INIT_VIS_RELATED_CALLS,
   0,0,                   /* dsp calls filled in by winamp */
   //NULL,                  /* set equalizer */
   IN_INIT_WACUP_EQSET_EMPTY
@@ -508,7 +508,10 @@ static void clean_close(void)
     g_uri = 0;
   }
   /* Close output system. */
-  plugin.outMod->Close();
+  if (plugin.outMod && plugin.outMod->Close)
+  {
+      plugin.outMod->Close();
+  }
   /* Deinitialize visualization. */
   plugin.SAVSADeInit();
 }
@@ -815,7 +818,7 @@ DWORD WINAPI playloop(LPVOID cookie)
 
       /* Give the samples to the vis subsystems */
       plugin.SAAddPCMData (spl, 2, 16, vispos);
-      plugin.VSAAddPCMData(spl, 2, 16, vispos);
+      /*plugin.VSAAddPCMData(spl, 2, 16, vispos);*/
 
       /* If we have a DSP plug-in, then call it on our samples */
       l = (
