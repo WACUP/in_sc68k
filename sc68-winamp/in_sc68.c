@@ -55,7 +55,6 @@
 #include <strsafe.h>
 #define WA_UTILS_SIMPLE
 #include <loader/loader/utils.h>
-#include <../wacup_version.h>
 
 #ifdef __cplusplus
 /* winamp 3 */
@@ -371,9 +370,10 @@ void about(HWND hwnd)
 #ifdef DEBUG
              L"\n" " !!! DEBUG Build !!! "
 #endif
-             L"\nWACUP related modifications by\n" WACUP_AUTHOR_STRW
-             L" (%hs)\n\nBuild date: %hs", (wchar_t*)plugin.description,
-             sc68_versionstr(), file68_versionstr(), WACUP_COPYRIGHT, __DATE__);
+             L"\nWACUP related modifications by\n%s (%s)\n\n"
+             L"Build date: %hs", (wchar_t*)plugin.description,
+             sc68_versionstr(), file68_versionstr(),
+             WACUP_Author(), WACUP_Copyright(), __DATE__);
 
   AboutMessageBox(hwnd, message, L"sc68 (Atari ST & Amiga) Player");
 }
@@ -449,9 +449,11 @@ static
 int getoutputtime(void)
 {
   int ms = 0;
-  if (lock()) {
-    ms = g_trackpos + plugin.outMod->GetOutputTime();
-    unlock();
+  if (plugin.outMod) {
+    if (lock()) {
+      ms = g_trackpos + plugin.outMod->GetOutputTime();
+      unlock();
+    }
   }
   return ms;
 }

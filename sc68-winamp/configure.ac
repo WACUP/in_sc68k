@@ -115,13 +115,19 @@ fi
 # AC_CHECK_HEADERS([windows.h],,AC_MSG_ERROR([See above]))
 # CPPFLAGS="[$]save_CPPFLAGS"
 
- 
-export [PKG_CONFIG_PATH]="[$]prefix/lib/pkgconfig"
+AS_IF(test x${PKG_CONFIG_LIBDIR+set} != xset,
+      export [PKG_CONFIG_LIBDIR]="[$]prefix/lib/pkgconfig")
 PKG_PROG_PKG_CONFIG
-PKG_CHECK_MODULES([sc68],[sc68 >= 3.0.0])
+PKG_CHECK_MODULES_STATIC([sc68],[sc68 >= 3.0.0])
 AC_MSG_CHECKING([sc68 version])
 sc68_VERSION=`[$]PKG_CONFIG [sc68] --modversion`
 AC_MSG_RESULT([[$]sc68_VERSION])
+
+echo [------------------------------------]
+echo sc68_VERSION= [$]sc68_VERSION
+echo sc68_CFLAGS= [$]sc68_CFLAGS
+echo sc68_LIBS= [$]sc68_LIBS
+echo [------------------------------------]
 
 save_CPPFLAGS="[$]CPPFLAGS"
 CPPFLAGS="[$]sc68_CFLAGS [$]CPPFLAGS"

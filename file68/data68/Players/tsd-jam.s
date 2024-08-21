@@ -1,9 +1,9 @@
 ;;; sc68 wrapper for JAM-TSD (Tao's ms30)
 ;;;
 ;;; by Benjamin Gerard
-;;; 
-;;; Time-stamp: <2011-09-12 15:39:40 ben>
-;;; 
+;;;
+;;; Time-stamp: <2023-09-13 19:17:01 ben>
+;;;
 
 
 OFFSET:     =$ac
@@ -37,7 +37,7 @@ pipotable:
   dcb.b 65,8
   dc.b  109,9
   dc.b  100,10
-  
+
 patch:
   move.l  a0,a6
 
@@ -58,9 +58,9 @@ patch2:
   move.b  #8,$FFFF8800.w
 ;  eor.b   #$80,d0
   move.b  0(a0,d0),$FFFF8802.w
-.here:  
+.here:
   dcb.w   (($960a-$95f8)-(.here-.rout))/2,$4e71
- 
+
 
 oneVoiceIn:
   dc.w  $00,$70,$e5,$163
@@ -75,7 +75,7 @@ oneVoiceOut:
 makeout:
   movem.l d0-a6,-(a7)
 
-; SCALE TABLE  
+; SCALE TABLE
   lea     oneVoiceIn(pc),a0
   lea     oneVoiceOut(pc),a1
   moveq   #15,d7
@@ -86,11 +86,11 @@ makeout:
   lsr.w   #8,d0
   move    d0,(a1)+
   dbf     d7,.lp1
-  
+
   lea     oneVoiceOut(pc),a5
   lea   replay+$1588-OFFSET3(pc),a6
   lea   $80*16(a6),a6
-  
+
   moveq #0,d0     ; current vol
   moveq #0,d7     ; check counter
 .lp2:
@@ -110,7 +110,7 @@ makeout:
   bra.s   .lp3
 .ok:
   addq    #1,d0
-  
+
   cmp.w   #$80,d7
   blt.s   .lp2
   movem.l (a7)+,d0-a6
@@ -127,14 +127,14 @@ init:
 ;  lea     truereplay+$64(pc),a0
 ;  move.w  patch(pc),(a0)+
 ;  move.l  #$4e714e71,(a0)
-  
+
   moveq   #1,d0   ;replay type ? (0:STF)
   moveq   #2,d1
   bsr     replay
-  
+
   moveq   #3,d1
   bsr     replay  ;pre-init
-  
+
   move.l  _song(pc),a0
   moveq   #1,d0   ; song number
   moveq   #4,d1
@@ -142,22 +142,22 @@ init:
 
 ;  moveq   #1,d1
 ;  bsr     replay  ; =>a0:get TSD struct
-  
+
 ;  moveq   #5,d1
 ;  bsr     replay  ; <=a0: Get info
- 
+
   moveq   #6,d1
   bsr     replay  ; Init STE and Timer
- 
+
 ;  bsr     replay+$53c-OFFSET2 ; Init table and sample ?
 ;  bsr     SetSTE
 ;  bsr     SetTimer  ; ? modify sound table ?
-  
+
 ;  bsr     truereplay
-  
+
 ;  bsr     makeout
   bsr   patch2
-  
+
   rts
 
   INCLUDE "lib/TosReloc.s"
@@ -166,4 +166,3 @@ truereplay: = *+$4b8
   INCBIN  "org/jam/tsd.jam"
   ds.b    128*1024
   print  replay-start
-  

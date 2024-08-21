@@ -1,19 +1,99 @@
 ;;; SoundFX replay routine
 ;;; adapted for sc68 by Gerald Schnabel <gschnabel@gmx.de>
+;;;
+;;; Clean-up by Ben G.
 
-	include "lib/org.s"
+	opt	o+,p+
+
+SFX_DELAY:	set	0x38e5		; Base delay ~122 BPM
+
+	;; SFX header
+	rsreset
+	;; ------------------------------------.
+hd_magic:	rs.l	1		; "SONG"
+hd_delay:	rs.w	1		; Delay (default=0x38e5)
+hd_reserved:	rs.w	7		;
+hd_size:	rs.b	0		; -> 20 bytes
+	;; ------------------------------------'
+
+	;; SFX instrument
+	rsreset
+	;; ------------------------------------.
+si_name:	rs.b	22		; Name
+si_len:	rs.w	1		; Length in words
+si_tune:	rs.b	1		; Fine tune
+si_volume:	rs.b	1		; Volume 0-63
+si_lpoff:	rs.w	1		; Loop offset (in bytes)
+si_lplen:	rs.w	1		; Loop len (in words)
+si_size:	rs.b	0		; -> 30 bytes
+	;; ------------------------------------'
+
+	;; SFX sequence header
+	rsreset
+	;; ------------------------------------.
+sh_len:	rs.b	1		; Song length
+sh_restart:	rs.b	1		; Restart position
+sh_seqdata:	rs.b	128		; Pattern sequence
+sh_size:	rs.b	0		; -> 130 bytes
+	;; ------------------------------------'
+
 
 	bra.w	fx_init
 	bra.w	fx_stop
 	bra.w	fx_play
 
 fx_init:
-	;; lea       SoundFXTune(pc),a0
-	move.l	a0,SongPointer
+	movem.l	d0-a6,-(a7)
+
+	;; Check mod version:
+	lea	Base(pc),a6
+	basereg	Base,a6
+	clr.l	va_modPtr(a6)
+
+	;; Looking for 'SONG' magic to detect 15 or 31 instruments
+	move.l	#"SONG",d0
+	lea	15*4(a0),a1
+	cmp.l	(a1),d0
+	bne.s	not15
+	;; Mod v1.3 (15 instruments)
+	moveq	#15,d1
+	lea	hd_size(a1),a2
+	lea	15*si_size(a2),a3
+	bra.s	storePtrs
+not15:
+	lea	31*4(a0),a1
+	cmp.l	(a1),d0
+	bne	fx_error
+	;; Mod v2.0 (31 instruments)
+	moveq	#31,d1
+	lea	hd_size(a1),a2
+	lea	31*si_size(a2),a3
+storePtrs:
+	move.l	a0,va_modPtr(a6)
+	move.l	a1,va_hdrPtr(a6)
+	move.w	d1,va_nbInst(a6)
+	move.l	a2,va_insPtr(a6)
+	move.l	a3,va_seqPtr(a6)
+
+
+	moveq	#31,d1
+	lea	31*4(a0),a1
+	cmp.l	(a1),d0
+	bne	fx_error
+.found:
+	move.w	d1,va_nbi(a6)
+	move.l	a0,va_modPtr(a6)
+	move.l	a1,a0	  ; a0: header
+
 	lea	60(a0),a0	  ;Laengentabelle ueberspringen
+
+	hd_delay
+
 	move.b	470(a0),AnzPat+1	;Laenge des Sounds
 	movem.l	d1-d7/a0-a6,-(a7)
-	move.l	SongPointer,a0
+
+	;;
+	move.l	va_modPtr,a0
 	lea	532(a0),a0
 	move	AnzPat(pc),d2	;wieviel Positions
 	subq	#1,d2		;für dbf
@@ -32,7 +112,7 @@ LenHigher:
 	movem.l	(a7)+,d1-d7/a0-a6
 	add.l	d0,a0			;Zur Adresse der Songstr.
 	add.w	#600,a0			;Laenge der SongStr.
-	move.l	SongPointer(pc),a2
+	move.l	va_modPtr(pc),a2
 	lea	Instruments(pc),a1	;Tabelle auf Samples
 	moveq	#14,d7			;15 Instrumente
 CalcIns:
@@ -50,26 +130,37 @@ CalcIns:
 	clr.w	Timer			;zahler auf 0
 	clr.l	TrackPos		;zeiger auf pos
 	clr.l	PosCounter		;zeiger innehalb des pattern
+
+fx_error
+	movem.l	(a7),d0-a6
+
+
+	rts			;
+
+fx_kill:	;; ------------------------------------.
+	pea	(a6)		;
+	lea	Base(pc),a6		;
+	clr.l	va_modPtr(a6)	;
+	clr.w	$dff0a8		; Mute voices
+	clr.w	$dff0b8		;
+	clr.w	$dff0c8		;
+	clr.w	$dff0d8		;
+	move.w	#$f,$dff096		; Disable Audio DMA
+	move.l	(a7)+,a6		;
+	;; ------------------------------------'
 	rts
 
-fx_stop:
-	lea	$dff000,a0		;AMIGA
-	clr.w	PlayLock		;player sperren
-	clr	$a8(a0)			;volumen auf 0
-	clr	$b8(a0)
-	clr	$c8(a0)
-	clr	$d8(a0)
-	move.w	#$f,$96(A0)		;dma sperren
-	rts
+fx_play:	;; ------------------------------------.
+	pea	(a6)		;
+	lea	Base(pc),a6		;
+	tst.l	va_modPtr(a6)	;
 
-fx_play:			           ;HauptAbspielRoutine
-	movem.l	d0-d7/a0-a6,-(a7)
-	addq.w	#1,Timer	         ;zähler erhöhen
-	cmp.w	#6,Timer	         ;schon 6?
-	bne.s	CheckEffects	         ;wenn nicht -> effekte
-	clr.w	Timer	         ;sonst zähler löschen
-	bsr	PlaySound	         ;und sound spielen
-NoPlay:	movem.l	(a7)+,d0-d7/a0-a6
+	move.w	va_timerCnt(a6),d0
+	add.w	va_timerAdd(a6),d0
+	move.w	d0,va_timerCnt(a6)
+	bcc.s	CheckEffects
+	bsr	PlaySound
+NoPlay:
 	rts
 
 CheckEffects:
@@ -244,7 +335,7 @@ pitch2:	clr.l	d0
 pitch3:	rts
 
 PlaySound:
-	move.l	SongPointer(pc),a0	;Zeiger auf SongFile
+	move.l	va_modPtr(pc),a0	;Zeiger auf SongFile
 	add	#60,a0			;Laengentabelle ueberspringen
 	move.l	a0,a3
 	move.l	a0,a2
@@ -386,11 +477,14 @@ NoPic:
 	clr	(a4)
 	move.w	(a6),16(a6)		;eintragen
 	move.w	20(a6),$dff096		;dma abschalten
+
+
 	move.l	d7,-(a7)
 	move	#300,d7			;genug für MC68030
 Delay1:
 	dbf	d7,Delay1		;delay
 	move.l	(a7)+,d7
+
 	cmp	#-2,(a6)		;Ist es 'STP'
 	bne.s	NoStop			;Nein!
 	clr	8(a5)
@@ -438,7 +532,7 @@ AnzPat:
 	dc.w	1		;Anzahl Positions
 PlayLock:
 	dc.w	0	     ;Flag fuer 'Sound erlaubt'
-SongPointer:
+va_modPtr:
 	dc.l	0
 
 Reserve:
@@ -449,5 +543,3 @@ NoteTable:
 	dc.w	214,202,190,180,170,160,151,143,135,127,120,113 ;3.Okt
 	dc.w	113,113,113,113,113,113,113,113,113,113,113,113 ;Reserve
 	dc.w	-1
-
-;; SoundFXTune:

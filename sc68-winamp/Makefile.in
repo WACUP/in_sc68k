@@ -6,7 +6,7 @@
 #
 
 # Autoconf stuff
-prefix       := @prefix@
+prefix       := $(DESTDIR)@prefix@
 exec_prefix  := @exec_prefix@
 libexecdir   := @libexecdir@
 libdir       := @libdir@
@@ -21,7 +21,7 @@ host_alias   := @host_alias@
 # PACKAGE_NAME      := @PACKAGE_NAME@
 
 # Winamp install dir
-WADIR        := '@wa_dir@'
+WADIR        := $(DESTDIR)'@wa_dir@'
 WADLL        := $(WADIR)/Plugins
 
 # Winamp SDK
@@ -78,10 +78,10 @@ install-strip: in_sc68.dll
 winamp: in_sc68.dll
 	test -n $(WADIR)
 	test -d $(WADLL)
-	install -D -s $< $(WADLL)/$<
+	install --strip-program=$(STRIP) -D -s $< $(WADLL)/$<
 
 uninstall:
-	@rm -f -v -- $(libexecdir)/in_sc68.dll
+	@rm -f -v -- $(DESTDIR)$(libexecdir)/in_sc68.dll
 	@test -z $(WADIR) || rm -f -v -- $(WINAMP_PLUGIN)/in_sc68.dll
 
 clean:
