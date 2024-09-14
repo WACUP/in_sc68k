@@ -413,12 +413,18 @@ int isourfile(const in_char * file)
  ****************************************************************************/
 static void pause(void) {
   atomic_set(&g_paused,1);
-  plugin.outMod->Pause(1);
+  if (plugin.outMod)
+  {
+    plugin.outMod->Pause(1);
+  }
 }
 
 static void unpause(void) {
   atomic_set(&g_paused,0);
-  plugin.outMod->Pause(0);
+  if (plugin.outMod)
+  {
+    plugin.outMod->Pause(0);
+  }
 }
 
 static int ispaused(void) {
@@ -477,7 +483,10 @@ static
  ****************************************************************************/
 void setvolume(const int volume)
 {
-  plugin.outMod->SetVolume(volume);
+  if (plugin.outMod)
+  {
+    plugin.outMod->SetVolume(volume);
+  }
 }
 
 static
@@ -486,7 +495,10 @@ static
  ****************************************************************************/
 void setpan(const int pan)
 {
-  plugin.outMod->SetPan(pan);
+  if (plugin.outMod)
+  {
+    plugin.outMod->SetPan(pan);
+  }
 }
 
 static void clean_close(void)
@@ -512,10 +524,13 @@ static void clean_close(void)
   /* Close output system. */
   if (plugin.outMod && plugin.outMod->Close)
   {
-      plugin.outMod->Close();
+    plugin.outMod->Close();
   }
   /* Deinitialize visualization. */
-  plugin.SAVSADeInit();
+  if (plugin.outMod)
+  {
+    plugin.SAVSADeInit();
+  }
 }
 
 static
@@ -642,7 +657,7 @@ int play(const in_char *fn)
   g_track = sc68_cntl(g_sc68, SC68_GET_TRACK);
 
   /* Init output module */
-  g_maxlatency = (plugin.outMod->Open ? plugin.outMod->Open(g_spr, 2, 16, -1, -1) : -1);
+  g_maxlatency = (plugin.outMod->Open && g_spr ? plugin.outMod->Open(g_spr, 2, 16, -1, -1) : -1);
   if (g_maxlatency < 0)
     goto exit;
 

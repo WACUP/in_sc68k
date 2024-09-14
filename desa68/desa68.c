@@ -3,7 +3,7 @@
  * @brief   68000 disassembler
  * @author  http://sourceforge.net/users/benjihan
  *
- * Copyright (c) 1998-2016 Benjamin Gerard
+ * Copyright (c) 1998-2024 Benjamin Gerard
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -592,14 +592,18 @@ static void desa_op_xi(desa68_t * d, u16 w)
   desa_char(d,"WL"[ 1 & (w >> 11)]);
 }
 
-static void desa_opsz(desa68_t *d, u8 size)
+static void desa_opsz_no_check(desa68_t *d, u8 size)
 {
-  if (size <= SZ_LONG) {
-    desa_char(d,'.');
-    desa_char(d,"BWL"[size]);
-  }
+  assert( size < 3u );
+  desa_char(d,'.');
+  desa_char(d,"BWL"[size]);
 }
 
+static void desa_opsz(desa68_t *d, u8 size)
+{
+  if (size <= SZ_LONG)
+    desa_opsz_no_check(d, size);
+}
 
 /* Immediate long values can sometime be disassembled as symbols. The
  * default symbol lookup function will do that if the source symbol
@@ -1549,76 +1553,81 @@ static void desa_line7(desa68_t * d)
 
 /* ======================================================================
  *
- *   LINE B :
- *   -CMP  <ea>,Dn
- *   -CMPA <ea>,An
- *   -CMPM (An)+,(An)+,
- *   -EOR  <ea>,Dn
+ *   LINE B :                 
+ *   -EOR  <ea>,Dn      BWL 0xB Dyy 1 SZ MMM Rxx
+ *   -CMPM (An)+,(An)+	BWL 0xB Ayy 1 SZ 001 Axx
+ *   -CMP  <ea>,Dn 	BWL 0xB Dyy 0 SZ MMM Rxx
+ *   -CMPA <ea>,An	.WL 0xB Ayy S 11 MMM Rxx
  *
  *
  * ====================================================================== */
 
-static int desa_check_cmpa(desa68_t * d)
+static void desa_cmpa(desa68_t * d)
 {
-  int modes = MBIT_ALL, opsz;
+  assert( d->_line == 0xB && d->_opsz == 3 );
 
-  /* CMPA <ea>,An 1011 REG S11 ADRMOD */
-  if ( d->_opsz != 3 || !(modes & (1<<d->_adrm0)) )
-    return 0;
-  desa_ascii(d,'CMPA');
-  opsz = SZ_WORD + BIT8(d->_opw);
-  desa_opsz(d,opsz);
-  desa_space(d);
-  get_ea_2(d, &d->sref, opsz, d->_mode3, d->_reg0, opsz);
-  desa_comma(d);
-  desa_op_AN(d,d->_reg9);
-  return 1;
+  if ( ! (MBIT_ALL & (1<<d->_adrm0) ) ) {
+    desa_dcw(d);
+  } else {
+    const int opsz = SZ_WORD + BIT8(d->_opw);
+    desa_ascii(d,'CMPA');
+    desa_opsz(d,opsz);
+    desa_space(d);
+    get_ea_2(d, &d->sref, opsz, d->_mode3, d->_reg0, opsz);
+    desa_comma(d);
+    desa_op_AN(d,d->_reg9);
+  }
 }
 
-static int desa_check_eor_cmp(desa68_t * d)
-{
-  int modes, inst;
-
-  if (d->_opsz == 3)
-    return 0;
-
-  /* EOR Dn,<ea> 1011 REG 1SZ ADRMOD */
-    if (d->_opw & 256) {
-    modes = MBIT_ALL & ~(MBIT_AN|MBIT_SRC);
-    inst = 'EOR';
-  }
-  /* CMP <ea>,Dn 1011 REG 0SZ ADRMOD */
-  else {
-    modes = MBIT_ALL & ~(!d->_opsz ? MBIT_AN : 0);
-    inst = 'CMP';
-  }
-  if ( ! (modes & (1<<d->_adrm0) ) )
-    return 0;
-
-  desa_dn_ae(d,inst);
-  return 1;
-}
-
-static int desa_check_cmpm(desa68_t * d)
+static void desa_cmpm(desa68_t * d)
 {
   /* CMPM (Ay)+,(Ax)+ 1011 RAX 1 SZ 001 RAY */
   /* Equiv EOR Dn,An */
-  if ((d->_opw&0470) != 0410)
-    return 0;
+  assert( d->_line == 0xB && d->_mode3 == MODE_AN
+	  && BIT8(d->_opw) && d->_opsz < 3 );
+
   desa_ascii(d,'CMPM');
+  desa_opsz_no_check(d,d->_opsz);
   desa_space(d);
   desa_op_ANp(d, d->_reg0);
   desa_comma(d);
   desa_op_ANp(d, d->_reg9);
-  return 1;
 }
 
+static void desa_cmp_eor(desa68_t * d)
+{
+  int inst, modes;
+  assert ( d->_line == 0xB && d->_opsz < 3 );
+	   
+  if ( ! BIT8( d->_opw ) ) {
+    /* CMP */
+    inst = 'CMP';
+    modes = MBIT_ALL;
+  } else if ( d->_mode3 != MODE_AN ) {
+    /* EOR */ 
+    inst = 'EOR';
+    modes = MBIT_ALL & ~( MBIT_AN | MBIT_SRC );
+  } else {
+    /* CMPM */
+    desa_cmpm( d );
+    return;
+  }
+
+  if ( modes & ( 1 << d->_adrm0 ) )
+    desa_dn_ae(d,inst);
+  else
+    desa_dcw(d);
+}
+  
 static void desa_lineB(desa68_t * d)
 {
-  if ( !desa_check_cmpm(d) &&
-       !desa_check_cmpa(d) &&
-       !desa_check_eor_cmp(d)
-    )   desa_dcw(d);
+  if ( d->_opsz == 3 ) {
+    /* CMPA */
+    desa_cmpa(d);
+  } else {
+    /* CMP / EOR / CMPM */
+    desa_cmp_eor(d);
+  }
 }
 
 /* ======================================================================

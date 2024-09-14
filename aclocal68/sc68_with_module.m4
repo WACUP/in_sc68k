@@ -1,21 +1,21 @@
-dnl# -*- mode:sh; sh-basic-offset:2; indent-tabs-mode:nil -*-
-dnl#
-dnl# autoconf macros
-dnl#
-dnl# (C) 2009-2016 Benjamin Gerard <http://sourceforge.net/users/benjihan>
-dnl#
-dnl# Distributed under the term of the GPL
-dnl#
+dnl # -*- mode:sh; sh-basic-offset:2; indent-tabs-mode:nil -*-
+dnl #
+dnl # autoconf macros
+dnl #
+dnl # (C) 2009-2024 Benjamin Gerard <http://sourceforge.net/users/benjihan>
+dnl #
+dnl # Distributed under the term of the GPL
+dnl #
 
-# serial 20160824 sc68_with_module.m4
+# serial 20240829 sc68_with_module.m4
 
-# SC68_PKG_CONFIG(prefix,mod,var,pkg-options)
-# ---------------
-# $1: prefix (package prefix)
-# $2: module-name (pkgconfig module name)
-# $3: VARIABLE suffix to receive result (var is $1_$3)
-# $4: pkgconfig options (--cflags ...)
-#
+dnl # SC68_PKG_CONFIG(prefix,mod,var,pkg-options)
+dnl # ---------------
+dnl # $1: prefix (package prefix)
+dnl # $2: module-name (pkgconfig module name)
+dnl # $3: VARIABLE suffix to receive result (var is $1_$3)
+dnl # $4: pkgconfig options (--cflags ...)
+dnl #
 AC_DEFUN([SC68_PKG_CONFIG],
   []dnl # INDENTATION
   [AC_REQUIRE([PKG_PROG_PKG_CONFIG])
@@ -24,22 +24,21 @@ AC_DEFUN([SC68_PKG_CONFIG],
    $1_$3=`$PKG_CONFIG $4 "$2" 2>/dev/null`
    AS_IF(
      [test "X$?" = "X0"],
-     [$1_PKG_EXISTS=yes; AC_MSG_RESULT([yes])],
+     [$1_PKG_EXISTS=yes; $1_$3=`echo [$]$1_$3`; AC_MSG_RESULT([yes ([$]$1_$3)])],
      [AS_UNSET($1_$3)
       $1_PKG_ERRORS=`$PKG_CONFIG --short-errors $4 "$2" 2>&1`
       AC_MSG_RESULT([no ($[]$1_PKG_ERRORS)])
       AS_ECHO("$$1[]_PKG_ERRORS") >&AS_MESSAGE_LOG_FD])
-  ])
+  ])dnl PKG_PROG_PKG_CONFIG
 
-
-# SC68_CHECK_HEADERS(prefix,header-files,[if-found],[if-not-found],[includes])
-# ------------------
-# $1: prefix
-# $2: headers-files
-# $3: action-if-found
-# $4: action-if-not-found
-# $5: includes
-#
+dnl # SC68_CHECK_HEADERS(prefix,header-files,[if-found],[if-not-found],[includes])
+dnl # ------------------
+dnl # $1: prefix
+dnl # $2: headers-files
+dnl # $3: action-if-found
+dnl # $4: action-if-not-found
+dnl # $5: includes
+dnl #
 AC_DEFUN([SC68_CHECK_HEADERS],
   []dnl # INDENTATION
   [save_$1_CPPFLAGS="$CPPFLAGS"
@@ -49,13 +48,13 @@ AC_DEFUN([SC68_CHECK_HEADERS],
    AS_UNSET(save_$1_CPPFLAGS)])
 
 
-# SC68_CHECK_FUNCS(prefix,funcs,[if-found],[if-not-found])
-# ----------------
-# $1: prefix
-# $2: functions
-# $3: action-if-found
-# $4: action-if-not-found
-#
+dnl # SC68_CHECK_FUNCS(prefix,funcs,[if-found],[if-not-found])
+dnl # ----------------
+dnl # $1: prefix
+dnl # $2: functions
+dnl # $3: action-if-found
+dnl # $4: action-if-not-found
+dnl #
 AC_DEFUN([SC68_CHECK_FUNCS],
   []dnl # INDENTATION
   [save_$1_LIBS="$LIBS"
@@ -69,15 +68,14 @@ AC_DEFUN([SC68_CHECK_FUNCS],
    AS_UNSET(save_$1_CFLAGS)])
 
 
-# _SC68_WITH_DUMP(prefix,[text])
-# ---------------
-# $1: prefix
-# $2: text
+dnl # _SC68_WITH_DUMP(prefix,[text])
+dnl # ---------------
+dnl # $1: prefix
+dnl # $2: text
 m4_define([_SC68_WITH_DUMP],
   []dnl # INDENTATION
   [
-    cat<<__EOF
-
+    cat >&AS_MESSAGE_LOG_FD <<__EOF
 ===============
  $1[]m4_ifnblank([$2],[ (m4_normalize([$2]))])
 ---------------
@@ -112,11 +110,11 @@ m4_define([_SC68_WITH_DUMP],
 __EOF
   ])
 
-# _SC68_WITH_INIT(prefix,module-or-package-name)
-# ---------------
-# $1: prefix
-# $2: module or package name
-#
+dnl # _SC68_WITH_INIT(prefix,module-or-package-name)
+dnl # ---------------
+dnl # $1: prefix
+dnl # $2: module or package name
+dnl #
 m4_define([_SC68_WITH_INIT],
   []dnl # INDENTATION
   [
@@ -156,8 +154,8 @@ m4_define([_SC68_WITH_INIT],
     AS_UNSET([$1_prefix])
   ])
 
-# _SC68_WITH_MODULE(prefix,mod,[headers],[funcs])
-# -----------------
+dnl # _SC68_WITH_MODULE(prefix,mod,[headers],[funcs])
+dnl # -----------------
 m4_define([_SC68_WITH_MODULE],
   []dnl # INDENTATION
   [
@@ -209,12 +207,12 @@ m4_define([_SC68_WITH_MODULE],
       [AS_IF([test X${$1_lname+Z} = XZ],[AS_UNSET([$1_LIBS])])])
   ])
 
-# _SC68_WITH_CLOSE(prefix,pkg-or-mod,[required])
-# ----------------
-# $1: prefix
-# $2: package or module name
-# $3: required (if non-blank)
-#
+dnl # _SC68_WITH_CLOSE(prefix,pkg-or-mod,[required])
+dnl # ----------------
+dnl # $1: prefix
+dnl # $2: package or module name# $3: required (
+dnl if non-blank)
+dnl #
 m4_define([_SC68_WITH_CLOSE],
   []dnl # INDENTATION
   [
@@ -270,12 +268,12 @@ m4_define([_SC68_WITH_CLOSE],
     _SC68_WITH_DUMP([$1],[finally])
   ])
 
-# _SC68_WITH_BUILD(prefix,pkg,to-source,headers)
-# ----------------
-# $1: prefix
-# $2: package-name
-# $3: headers (if non-blank) (not implemented yet)
-#
+dnl # _SC68_WITH_BUILD(prefix,pkg,to-source,headers)
+dnl # ----------------
+dnl # $1: prefix
+dnl # $2: package-name
+dnl # $3: headers (if non-blank) (not implemented yet)
+dnl #
 m4_define([_SC68_WITH_BUILD],
   []dnl # INDENTATION
   [
@@ -348,20 +346,20 @@ m4_define([_SC68_WITH_SOURCE],
                   AS_UNSET([$1_srcdir])])])])
   ])
 
-# SC68_WITH_SOURCE(prefix,pkg,to-source,headers)
-# ----------------
-# $1: prefix
-# $2: package-name
-# $3: relative path to package source
-# $4: headers (if non-blank)
-#
+dnl # SC68_WITH_SOURCE(prefix,pkg,to-source,headers)
+dnl # ----------------
+dnl # $1: prefix
+dnl # $2: package-name
+dnl # $3: relative path to package source
+dnl # $4: headers (if non-blank)
+dnl #
 AC_DEFUN([SC68_WITH_SOURCE],
   []dnl # INDENTATION
   [
     AS_UNSET([$1_srcdir])
     _SC68_WITH_SOURCE($@)
 
-    dnl # only package that generate header files in their build
+    dnl # only packages that generate header files in their build
     dnl # directory needs to locate that build directory. Currently
     dnl # only file68
     m4_if(
@@ -397,14 +395,14 @@ AC_DEFUN([SC68_WITH_SOURCE],
   ])
 
 
-# SC68_WITH_MODULE(prefix,mod,[headers],[funcs],[req])
-# ----------------
-# $1: prefix
-# $2: module-name
-# $3: headers (if non-blank)
-# $4: functions (if non-blank)
-# $5: required (if non-blank)
-#
+dnl # SC68_WITH_MODULE(prefix,mod,[headers],[funcs],[req])
+dnl # ----------------
+dnl # $1: prefix
+dnl # $2: module-name
+dnl # $3: headers (if non-blank)
+dnl # $4: functions (if non-blank)
+dnl # $5: required (if non-blank)
+dnl #
 AC_DEFUN([SC68_WITH_MODULE],
   []dnl # INDENTATION
   [
@@ -414,16 +412,16 @@ AC_DEFUN([SC68_WITH_MODULE],
     _SC68_WITH_CLOSE([$1],[$2],[$5])
   ])
 
-# SC68_WITH_PACKAGE(prefix,pkg,mod,to-source,[headers],[funcs],[req])
-# -----------------
-# $1: prefix
-# $2: package-name
-# $3: module-name
-# $4: relative path to package source
-# $5: headers (if non-blank)
-# $6: functions (if non-blank)
-# $7: required (if non-blank)
-#
+dnl # SC68_WITH_PACKAGE(prefix,pkg,mod,to-source,[headers],[funcs],[req])
+dnl # -----------------
+dnl # $1: prefix
+dnl # $2: package-name
+dnl # $3: module-name
+dnl # $4: relative path to package source
+dnl # $5: headers (if non-blank)
+dnl # $6: functions (if non-blank)
+dnl # $7: required (if non-blank)
+dnl #
 AC_DEFUN([SC68_WITH_PACKAGE],
   []dnl # INDENTATION
   [
@@ -459,8 +457,8 @@ AC_DEFUN([SC68_WITH_PACKAGE],
                    [test "$has_$1/${$1_builddir+set}" = yes/set])
   ])
 
-dnl# ----------------------------------------------------------------------
-dnl#
-dnl# End Of sc68_with_module.m4
-dnl#
-dnl# ----------------------------------------------------------------------
+dnl # ----------------------------------------------------------------------
+dnl #
+dnl # End Of sc68_with_module.m4
+dnl #
+dnl # ----------------------------------------------------------------------
