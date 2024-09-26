@@ -55,6 +55,7 @@
 #include <strsafe.h>
 #define WA_UTILS_SIMPLE
 #include <loader/loader/utils.h>
+#include <loader/loader/delay_load_helper.h>
 
 #ifdef __cplusplus
 /* winamp 3 */
@@ -1357,3 +1358,5 @@ int save_config(void)
   return res;
 }
 #endif
+
+DLL_DELAY_LOAD_HANDLER
