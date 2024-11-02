@@ -1,7 +1,7 @@
 LIBRARY	"in_sc68k"
 EXPORTS
 winampGetInModule2 @1
-winampGetExtendedFileInfo @2
+winampGetExtendedFileInfoW @2
 winampUseUnifiedFileInfoDlg @3
 winampGetExtendedRead_close @4
 winampGetExtendedRead_getData @5

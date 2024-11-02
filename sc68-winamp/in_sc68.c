@@ -119,7 +119,7 @@ static void quit(void);
 static void config(HWND);
 static void about(HWND);
 static  int infobox(const in_char *, HWND);
-static  int isourfile(const in_char *);
+static  int isourfile(IN_ISOURFILE_PARAM);
 static void pause(void);
 static void unpause(void);
 static  int ispaused(void);
@@ -395,18 +395,9 @@ static
 /*****************************************************************************
  * FILE DETECTION
  ****************************************************************************/
-int isourfile(const in_char * file)
+int isourfile(IN_ISOURFILE_PARAM)
 {
-  if (file && *file && !IsPathURLA(file)) {
-    // to save doing some of the things with making
-    // the plug-in fully unicode for now this'll do
-    // just enough to get a valid extension to use
-    const wchar_t *uri = (LPCWSTR)file;
-    if (uri && *uri && SameStrN(uri,L"sc68:",5)) {
-      return 1;
-    }
-  }
-  return 0;
+  return SameStrN(fn,L"sc68:",5);
 }
 
 /*****************************************************************************
@@ -703,7 +694,7 @@ const char * get_tag(const sc68_cinfo_t * const cinfo, const char * const key)
   return 0;
 }
 
-static void xfinfo(char *title, int *msptr, sc68_t *sc68, sc68_disk_t disk)
+static void xfinfo(in_char *title, int *msptr, sc68_t *sc68, sc68_disk_t disk)
 {
   const int max = GETFILEINFO_TITLE_LENGTH;
   sc68_music_info_t tmpmi, * const mi = &tmpmi;
@@ -718,10 +709,10 @@ static void xfinfo(char *title, int *msptr, sc68_t *sc68, sc68_disk_t disk)
       artist = mi->artist;
 
     if (mi->tracks == 1 /* || !strcmp68(mi->title, mi->album) */)
-      snprintf(title, max, "%s - %s",artist, mi->album);
+      StringCchPrintf(title, max, TEXT("%hs - %hs"),artist, mi->album);
     else
-      snprintf(title, max, "%s - %s [%d tracks]",
-               artist, mi->album, mi->tracks);
+      StringCchPrintf(title, max, TEXT("%hs - %hs [%d tracks]"),
+                      artist, mi->album, mi->tracks);
   }
   if (msptr)
     *msptr = mi->dsk.time_ms;
@@ -740,7 +731,7 @@ static
  * is copied into it.  if msptr is NULL, no length is copied
  * into it.
  ****************************************************************************/
-void getfileinfo(const in_char * uri, in_char * title, int * msptr)
+void getfileinfo(const in_char * filename, in_char * title, int * msptr)
 {
   if (title)
     *title = 0;
@@ -749,7 +740,7 @@ void getfileinfo(const in_char * uri, in_char * title, int * msptr)
 
   create_sc68();
 
-  if (!uri || !*uri) {
+  if (!filename || !*filename) {
     /* current disk */
     if (lock()) {
       if (g_sc68)
@@ -759,6 +750,8 @@ void getfileinfo(const in_char * uri, in_char * title, int * msptr)
   } else {
     /* some other disk */
     sc68_disk_t disk;
+    char uri[MAX_PATH] = { 0 };
+    ConvertUnicodeFn(uri, ARRAYSIZE(uri), filename, CP_ACP);
     if (disk = wasc68_cache_get(uri), disk) {
       xfinfo(title, msptr, 0, disk);
       wasc68_cache_release(disk, 0);
@@ -1088,8 +1081,8 @@ void quit(void)
   sc68_shutdown();
 }
 
-static int xinfo(const char *data, char *dest, size_t destlen,
-                 sc68_t * sc68, sc68_disk_t disk, int track)
+static int xinfo(const char *data, in_char *dest, size_t destlen,
+                 sc68_t * sc68, sc68_disk_t disk, const int track)
 {
   sc68_music_info_t tmpmi, * const mi = &tmpmi;
   const char * value = 0;
@@ -1122,8 +1115,7 @@ static int xinfo(const char *data, char *dest, size_t destlen,
   }
   else if (!strcasecmp(data,"track")) {
     if (track == mi->trk.track) {
-      snprintf(dest, destlen, "%d", track);
-      value = dest;
+      value = (char*)I2WStr(track, dest, destlen);
     }
   }
   /* else if (!strcasecmp(data,"disc")) { */
@@ -1146,11 +1138,10 @@ static int xinfo(const char *data, char *dest, size_t destlen,
   else if (!strcasecmp(data,"length")) {
     /* length in ms */
     if (track == mi->trk.track) {
-      snprintf(dest, destlen, "%u", mi->trk.time_ms);
+      value = (char*)I2WStr(mi->trk.time_ms, dest, destlen);
     } else {
-      snprintf(dest, destlen, "%u", mi->dsk.time_ms);
+      value = (char*)I2WStr(mi->dsk.time_ms, dest, destlen);
     }
-    value = dest;
   }
   else if (!strcasecmp(data,"year")) {
     value = get_tag(&mi->dsk,"year");
@@ -1168,22 +1159,22 @@ static int xinfo(const char *data, char *dest, size_t destlen,
     value = get_tag(&mi->dsk,"comment");
   }
   else if (!strcasecmp(data, "samplerate")) {
-    value = I2AStr(sc68_cntl(g_sc68, SC68_GET_SPR), dest, destlen);
+    value = (char*)I2WStr(sc68_cntl(g_sc68, SC68_GET_SPR), dest, destlen);
   }
   else if (!strcasecmp(data, "bitrate")) {
     const int br = (sc68_cntl(g_sc68, SC68_GET_SPR) * 2 * 16);
     if (br > 0) {
-      value = I2AStr((br / 1000), dest, destlen);
+      value = (char*)I2WStr((br / 1000), dest, destlen);
     }
   }
   else if (!strcasecmp(data, "formatinformation")) {
     // TODO localise
-    StringCchPrintf(dest, destlen, "Length: %u seconds\nSamplerate: %d Hz\n"
-                    "Loop count: %d\n# of tracks: %d", ((track == mi->trk.track) ?
+    StringCchPrintf(dest, destlen, TEXT("Length: %u seconds\nSamplerate: %d Hz\n")
+                    TEXT("Loop count: %d\n# of tracks: %d"), ((track == mi->trk.track) ?
                     mi->trk.time_ms : mi->dsk.time_ms) / 1000, sc68_cntl(g_sc68,
                     SC68_GET_SPR), sc68_cntl(g_sc68, SC68_GET_LOOPS),
                     sc68_cntl(g_sc68, SC68_GET_TRACKS));
-    value = dest;
+    value = (char*)dest;
     //value = I2AStr(sc68_cntl(g_sc68, SC68_GET_SPR), dest, destlen);
   }  
   /*else if (!strcasecmp(data,"")) {
@@ -1193,9 +1184,9 @@ static int xinfo(const char *data, char *dest, size_t destlen,
   if (!value)
     return 0;
 
-  if (value != dest)
-    strncpy(dest, value, destlen);
-  dest[destlen-1] = 0;
+  if (value != (char*)dest)
+    ConvertANSI(value, -1, CP_ACP, dest, destlen);
+
   return 1;
 }
 
@@ -1212,8 +1203,8 @@ static int xinfo(const char *data, char *dest, size_t destlen,
  * @retval 0 unsupported tag
  */
 EXPORT
-int winampGetExtendedFileInfo(const char *uri, const char *data,
-                              char *dest, size_t max)
+int winampGetExtendedFileInfoW(const wchar_t *filename, const char *data,
+                               wchar_t *dest, const size_t max)
 {
   if (SameStrA(data, "type") ||
       SameStrA(data, "lossless") ||
@@ -1233,18 +1224,18 @@ int winampGetExtendedFileInfo(const char *uri, const char *data,
   }
   else if (SameStrA(data, "family"))
   {
-    if (uri && *uri && SameStrA(uri, ".gz"))
+    if (SameStr(filename, L".gz"))
     {
-      strncpy(dest, "sc68 (Compressed) Audio File", max);
+      StringCchCopy(dest, max, TEXT("sc68 (Compressed) Audio File"));
     }
     else
     {
-      strncpy(dest, "sc68 Audio File", max);
+      StringCchCopy(dest, max, TEXT("sc68 Audio File"));
     }
     return 1;
   }
 
-  if (!uri || !uri[0])
+  if (!filename || !filename[0])
   {
     return 0;
   }
@@ -1261,14 +1252,16 @@ int winampGetExtendedFileInfo(const char *uri, const char *data,
         unlock();
       }
     } else*/ {
-      char * filename = 0;
-      int settrack = extract_track_from_uri(uri, &filename);
-      if (disk = wasc68_cache_get(filename/*/uri/**/), disk) {
+      char *fn = 0;
+      char uri[MAX_PATH] = { 0 };
+      ConvertUnicodeFn(uri, ARRAYSIZE(uri), filename, CP_ACP);
+      int settrack = extract_track_from_uri(uri, &fn);
+      if (disk = wasc68_cache_get(uri), disk) {
         res = xinfo(data, dest, max, 0, disk, settrack);
         wasc68_cache_release(disk, 0);
       }
-      if (filename)
-        free(filename);
+      if (fn)
+        free(fn);
     }
   }
   return res;

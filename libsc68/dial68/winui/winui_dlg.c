@@ -329,7 +329,7 @@ static int GetInt(HWND hdlg, int id, int * ptr_val)
 
 static int SetText(HWND hdlg, int id, const char * new_text)
 {
-  return -!SetDlgItemText(hdlg, id, new_text);
+  return -!SetDlgItemTextA(hdlg, id, new_text);
 
 }
 
@@ -1145,7 +1145,7 @@ static dialog_t * new_dialog(void * cookie, dlgmsg_f cntl, dialflag_t * flags)
       tmp.ident = v.s;
       tmp.locator = dlgdef[i].idd == IDC_STATIC
         ? dlgdef[i].locator
-        : MAKEINTRESOURCE(dlgdef[i].idd);
+        : MAKEINTRESOURCEA(dlgdef[i].idd);
       break;
     }
   }
