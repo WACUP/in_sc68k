@@ -32,6 +32,7 @@
 
 #include <string.h>
 
+#ifdef _DEBUG
 /* Process error message (printf like fmt). */
 int error68_va(const char * fmt, va_list list)
 {
@@ -82,3 +83,5 @@ int error68x(void * cookie, const char * fmt, ...)
 
   return err;
 }
+
+#endif

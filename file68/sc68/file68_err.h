@@ -26,6 +26,7 @@
  * @{
  */
 
+#ifdef _DEBUG
 FILE68_API
 /**
  * Print a formatted error message.
@@ -79,6 +80,9 @@ FILE68_API
  * @see error68()
  */
 int error68x_va(void * cookie, const char * format, va_list list);
+#else
+#define error68(format,...) -1
+#endif
 
 /**
  * @}

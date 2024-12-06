@@ -78,6 +78,7 @@ void * msg68_set_cookie(void * userdata)
   return old;
 }
 
+#ifdef _DEBUG
 /* Print message (variable argument). */
 void msg68x_va(int cat, void * cookie, const char * fmt, va_list list)
 {
@@ -283,6 +284,7 @@ void msg68x_always(void * userdata, const char * fmt, ...)
   va_end(list);
 #endif
 }
+#endif
 
 static inline int is_valid_category(const int i)
 {

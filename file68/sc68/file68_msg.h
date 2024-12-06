@@ -196,6 +196,7 @@ void * msg68_set_cookie(void * cookie);
  *   message handler function.
  */
 
+#ifdef _DEBUG
 FILE68_API
 /**
  * Print generic message (variable argument).
@@ -369,6 +370,8 @@ FILE68_API FMT23
  */
 void msg68x_trace(void * cookie, const char * fmt, ...);
 
+#endif
+
 /**
  * @}
  */
@@ -381,6 +384,11 @@ void msg68x_trace(void * cookie, const char * fmt, ...);
 # ifdef NDEBUG
 #  if defined(__GNUC__) || defined(CPP_SUPPORTS_VA_MACROS)
 #   define TRACE68(cat,fmt,...)
+#   define msg68_critical(fmt,...)
+#   define msg68_warning(fmt,...)
+#   define msg68_error(fmt,...)
+#   define msg68(cat,fmt,...)
+#   define msg68x_warning(cookie,fmt,...)
 #   ifndef CPP_SUPPORTS_VA_MACROS
 #    define CPP_SUPPORTS_VA_MACROS 1
 #   endif
