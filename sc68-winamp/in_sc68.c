@@ -1167,6 +1167,14 @@ static int xinfo(const char *data, in_char *dest, size_t destlen,
       value = (char*)I2WStr((br / 1000), dest, destlen);
     }
   }
+  else if (!strcasecmp(data, "bitdepth")) {
+      // TODO is this correct though as it's
+      //      from a 16-bit machine it seems
+      //      like it should be vs the code!
+      dest[0] = L'1';
+      dest[1] = L'6';
+      dest[2] = 0;/**/
+  }
   else if (!strcasecmp(data, "formatinformation")) {
     // TODO localise
     StringCchPrintf(dest, destlen, TEXT("Length: %u seconds\nSamplerate: %d Hz\n")
