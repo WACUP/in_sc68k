@@ -25,9 +25,9 @@
 #ifndef WASC68_H
 #define WASC68_H
 
-#ifndef NOVTABLE
+/*#ifndef NOVTABLE
 # define NOVTABLE
-#endif
+#endif*/
 
 #ifndef _GNU_SOURCE
 # define _GNU_SOURCE
@@ -59,7 +59,7 @@
  * the original value can be found in the configure.ac file.
  */
 #ifndef PACKAGE_VERSION
-# define PACKAGE_VERSION "1.0.13"
+# define PACKAGE_VERSION "1.1"
 #endif
 
 #include "sc68/sc68.h"

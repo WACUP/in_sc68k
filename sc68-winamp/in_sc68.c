@@ -99,6 +99,9 @@ static int           g_trackpos;   /* track position in ms   */
 static int           g_allin1;     /* play all tracks as one */
 static int           g_track;      /* current playing track  */
 static int           g_tracks;     /* number of tracks       */
+static sc68_disk_t   g_disk_info;  /* cached for metadata    */
+static char        * g_last_info;  /* cached file for above  */
+static int           g_last_settrack;
 
 static volatile LONG g_playing;    /* true while playing     */
 static volatile LONG g_stopreq;    /* stop requested         */
@@ -1225,8 +1228,7 @@ int winampGetExtendedFileInfoW(const wchar_t *filename, const char *data,
   else if (SameStrA(data, "streamgenre") ||
            SameStrA(data, "streamtype") ||
            SameStrA(data, "streamurl") ||
-           SameStrA(data, "streamname") ||
-           SameStrA(data, "reset"))
+           SameStrA(data, "streamname"))
   {
     return 0;
   }
@@ -1248,31 +1250,53 @@ int winampGetExtendedFileInfoW(const wchar_t *filename, const char *data,
     return 0;
   }
 
-  create_sc68();
-
-  sc68_disk_t disk;
-  int res = 0;
-
   if (data && *data && dest && max > 2) {
-    /*if (!uri || !*uri) {
-      if (lock()) {
-        res = xinfo(data, dest, max, g_sc68, 0, g_track);
-        unlock();
+    create_sc68();
+
+    const int reset = !!SameStrA(data, "reset");
+    char uri[MAX_PATH] = { 0 };
+    ConvertUnicodeFn(uri, ARRAYSIZE(uri), filename, CP_ACP);
+
+    if (reset || !g_disk_info || !g_last_info || !SameStrA(g_last_info, uri))
+    {
+      if (g_last_info)
+      {
+        free(g_last_info);
+        g_last_info = NULL;
       }
-    } else*/ {
-      char *fn = 0;
-      char uri[MAX_PATH] = { 0 };
-      ConvertUnicodeFn(uri, ARRAYSIZE(uri), filename, CP_ACP);
-      int settrack = extract_track_from_uri(uri, &fn);
-      if (disk = wasc68_cache_get(uri), disk) {
-        res = xinfo(data, dest, max, 0, disk, settrack);
-        wasc68_cache_release(disk, 0);
+
+      if (!reset)
+      {
+        int res = 0;
+
+        if (g_disk_info)
+        {
+          wasc68_cache_release(g_disk_info, 0);
+          g_disk_info = NULL;
+        }
+
+        g_last_settrack = extract_track_from_uri(uri, &g_last_info);
+
+        if (g_disk_info = wasc68_cache_get(g_last_info), g_disk_info) {
+          res = xinfo(data, dest, max, 0, g_disk_info, g_last_settrack);
+        }
+        return res;
       }
-      if (fn)
-        free(fn);
+      else
+      {
+        if (g_disk_info)
+        {
+          wasc68_cache_release(g_disk_info, 0);
+          g_disk_info = NULL;
+        }
+      }
+    }
+    else if (g_disk_info)
+    {
+      return xinfo(data, dest, max, 0, g_disk_info, g_last_settrack);
     }
   }
-  return res;
+  return 0;
 }
 
 struct transcon {
