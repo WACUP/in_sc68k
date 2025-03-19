@@ -137,7 +137,7 @@ error:
 
 void *gzip68_load(const char *fname, int *ptr_ulen)
 {
-  int fd, err;
+  int fd;
   gzFile f = 0;
   int ulen = 0;
   void * uncompr = 0;

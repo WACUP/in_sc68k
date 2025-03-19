@@ -99,7 +99,6 @@ void inl_chk68(emu68_t * const emu68, const int68_t a, const int68_t b)
 static inline
 void inl_illegal68(emu68_t * const emu68)
 {
-
   inl_exception68(emu68, ILLEGAL_VECTOR, -1);
 }
 

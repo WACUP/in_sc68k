@@ -258,9 +258,15 @@ static char	     sc68_errstr[ERRMAX];
  * Forward declarations
  **********************************************************************/
 
-static void sc68_debug(sc68_t * sc68, const char * fmt, ...) FMT23;
+#ifdef _DEBUG
+static void sc68_debug(sc68_t* sc68, const char* fmt, ...) FMT23;
 static int error_addx(sc68_t * sc68, const char * fmt, ...) FMT23;
 static int error_add(sc68_t * sc68, const char * fmt, const char *);
+#else
+#define sc68_debug(sc68,fmt,...)
+#define error_addx(sc68,fmt,...) -1
+#define error_add(sc68,fmt,...) -1
+#endif
 static int get_spr(const sc68_t * sc68);
 static int set_spr(sc68_t * sc68, int hz);
 static int get_asid(const sc68_t * sc68);
@@ -2470,6 +2476,7 @@ const char * sc68_error(sc68_t * sc68)
     ;
 }
 
+#ifdef _DEBUG
 static int error_addx(sc68_t * sc68, const char * fmt, ...)
 {
   va_list list;
@@ -2513,6 +2520,7 @@ static void sc68_debug(sc68_t * sc68, const char * fmt, ...)
     msg68x_va(sc68_cat, sc68, fmt, list);
   va_end(list);
 }
+#endif
 
 /* static int track_now_or_next(const sc68_t * sc68) { */
 /*   if (!is_disk(sc68)) */
