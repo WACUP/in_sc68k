@@ -106,8 +106,8 @@ FONT 8, "MS Shell Dlg"
 
 
 1 VERSIONINFO
-FILEVERSION 1, 1, 0, 0
-PRODUCTVERSION 1, 1, 0, 0
+FILEVERSION 1, 1, 1, 0
+PRODUCTVERSION 1, 1, 1, 0
 FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
 FILEFLAGS 0x1L
@@ -124,12 +124,12 @@ FILESUBTYPE 0x0L
         {
             VALUE "CompanyName", "WACUP\0"
                 VALUE "FileDescription", "Input Plug-in\0"
-                VALUE "FileVersion", "1.1.0.0" "\0"
+                VALUE "FileVersion", "1.1.1.0" "\0"
                 VALUE "InternalName", "in_sc68k.dll\0"
                 VALUE "LegalCopyright", "Copyright © 1998-2025 Benjamin Gerard. WACUP related modifications by Darren Owen aka DrO (2023-2025)\0"
                 VALUE "OriginalFilename", "in_sc68k.dll\0"
                 VALUE "ProductName", "SC68 (Atari ST & Amiga) Player\0"
-                VALUE "ProductVersion", "1.1.0.0" "\0"
+                VALUE "ProductVersion", "1.1.1.0" "\0"
         }
     }
     BLOCK "VarFileInfo"
