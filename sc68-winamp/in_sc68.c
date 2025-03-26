@@ -536,7 +536,7 @@ void stop(void)
 {
   if (lock()) {
     atomic_set(&g_stopreq,1);
-    if (g_thdl) {
+    if (CheckThreadHandleIsValid(&g_thdl)) {
       switch (WaitForSingleObjectEx(g_thdl,10000,TRUE)) {
       case WAIT_OBJECT_0:
         CloseHandle(g_thdl);
@@ -652,7 +652,8 @@ int play(const in_char *fn)
   g_track = sc68_cntl(g_sc68, SC68_GET_TRACK);
 
   /* Init output module */
-  g_maxlatency = (plugin.outMod->Open && g_spr ? plugin.outMod->Open(g_spr, 2, 16, -1, -1) : -1);
+  g_maxlatency = (plugin.outMod && plugin.outMod->Open && g_spr ?
+                  plugin.outMod->Open(g_spr, 2, 16, -1, -1) : -1);
   if (g_maxlatency < 0)
     goto exit;
 
@@ -700,7 +701,7 @@ const char * get_tag(const sc68_cinfo_t * const cinfo, const char * const key)
 static void xfinfo(in_char *title, int *msptr, sc68_t *sc68, sc68_disk_t disk)
 {
   const int max = GETFILEINFO_TITLE_LENGTH;
-  sc68_music_info_t tmpmi, * const mi = &tmpmi;
+  sc68_music_info_t tmpmi = {0}, * const mi = &tmpmi;
 
   if (sc68_music_info(sc68, mi,
                       sc68 ? SC68_CUR_TRACK : SC68_DEF_TRACK, disk))
@@ -1087,7 +1088,7 @@ void quit(void)
 static int xinfo(const char *data, in_char *dest, size_t destlen,
                  sc68_t * sc68, sc68_disk_t disk, const int track)
 {
-  sc68_music_info_t tmpmi, * const mi = &tmpmi;
+  sc68_music_info_t tmpmi = {0}, * const mi = &tmpmi;
   const char * value = 0;
   if (sc68_music_info(sc68, mi, track>0 ? track : SC68_DEF_TRACK, disk)) {
   }
