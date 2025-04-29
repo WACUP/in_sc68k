@@ -232,15 +232,23 @@ In_Module plugin =
 
 static void GetFileExtensions(void)
 {
-    static int loaded_extensions;
-    if (!loaded_extensions)
-    {
-        loaded_extensions = 1;
+    if (!plugin.FileExtensions)
+	{
+        LPCWSTR extensions[] =
+		{
+			{ L"SC68;SC68.GZ" },
+			{ L"SND;SNDH" }
+		},
+            // TODO localise
+			descriptions[] =
+		{
+            { L"sc68 File (*.SC68;*.SC68.GZ)" },
+            { L"sndh File (*.SND;*.SNDH)" }
+		};
 
-        // TODO localise
-        plugin.FileExtensions = (char*)L"SC68;SC68.GZ\0sc68 File (*.SC68;*.SC68.GZ)\0"
-                                              L"SND;SNDH\0sndh File (*.SND;*.SNDH)\0";
-    }
+		plugin.FileExtensions = BuildInputFileListArrayString(extensions, descriptions,
+                                                    ARRAYSIZE(extensions), NULL, NULL);
+	}
 }
 
 /*****************************************************************************
@@ -713,10 +721,10 @@ static void xfinfo(in_char *title, int *msptr, sc68_t *sc68, sc68_disk_t disk)
       artist = mi->artist;
 
     if (mi->tracks == 1 /* || !strcmp68(mi->title, mi->album) */)
-      StringCchPrintf(title, max, TEXT("%hs - %hs"),artist, mi->album);
+        PrintfCch(title, max, TEXT("%hs - %hs"),artist, mi->album);
     else
-      StringCchPrintf(title, max, TEXT("%hs - %hs [%d tracks]"),
-                      artist, mi->album, mi->tracks);
+        PrintfCch(title, max, TEXT("%hs - %hs [%d tracks]"),
+                             artist, mi->album, mi->tracks);
   }
   if (msptr)
     *msptr = mi->dsk.time_ms;
@@ -1051,7 +1059,6 @@ void create_sc68(void)
       } else {
         DBG("don't have service memman lang\n");
       }
-      //if (sf) WASABI_API_LNG = reinterpret_cast<api_language*>(sf->getInterface());
     }
 #endif
     DBG("init completed\n");
@@ -1181,11 +1188,11 @@ static int xinfo(const char *data, in_char *dest, size_t destlen,
   }
   else if (!strcasecmp(data, "formatinformation")) {
     // TODO localise
-    StringCchPrintf(dest, destlen, TEXT("Length: %u seconds\nSamplerate: %d Hz\n")
-                    TEXT("Loop count: %d\n# of tracks: %d"), ((track == mi->trk.track) ?
-                    mi->trk.time_ms : mi->dsk.time_ms) / 1000, sc68_cntl(g_sc68,
-                    SC68_GET_SPR), sc68_cntl(g_sc68, SC68_GET_LOOPS),
-                    sc68_cntl(g_sc68, SC68_GET_TRACKS));
+    PrintfCch(dest, destlen, TEXT("Length: %u seconds\nSamplerate: %d Hz\n")
+              TEXT("Loop count: %d\n# of tracks: %d"), ((track == mi->trk.track) ?
+              mi->trk.time_ms : mi->dsk.time_ms) / 1000, sc68_cntl(g_sc68,
+              SC68_GET_SPR), sc68_cntl(g_sc68, SC68_GET_LOOPS),
+              sc68_cntl(g_sc68, SC68_GET_TRACKS));
     value = (char*)dest;
     //value = I2AStr(sc68_cntl(g_sc68, SC68_GET_SPR), dest, destlen);
   }  
@@ -1237,11 +1244,11 @@ int winampGetExtendedFileInfoW(const wchar_t *filename, const char *data,
   {
     if (SameStr(filename, L".gz"))
     {
-      StringCchCopy(dest, max, TEXT("sc68 (Compressed) Audio File"));
+      CopyCchStr(dest, max, TEXT("sc68 (Compressed) Audio File"));
     }
     else
     {
-      StringCchCopy(dest, max, TEXT("sc68 Audio File"));
+      CopyCchStr(dest, max, TEXT("sc68 Audio File"));
     }
     return 1;
   }
