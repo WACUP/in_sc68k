@@ -612,7 +612,7 @@ int play(const in_char *fn)
     goto exit;
 
   char* filename = 0;
-  char uri[MAX_PATH] = { 0 };
+  char uri[MAX_PATH]/* = { 0 }*/;
   ConvertUnicodeFn(uri, ARRAYSIZE(uri), (wchar_t*)fn, CP_ACP);
   const int settrack = extract_track_from_uri(uri, &filename);
   if (settrack) {
@@ -762,7 +762,7 @@ void getfileinfo(const in_char * filename, in_char * title, int * msptr)
   } else {
     /* some other disk */
     sc68_disk_t disk;
-    char uri[MAX_PATH] = { 0 };
+    char uri[MAX_PATH]/* = { 0 }*/;
     ConvertUnicodeFn(uri, ARRAYSIZE(uri), filename, CP_ACP);
     if (disk = wasc68_cache_get(uri), disk) {
       xfinfo(title, msptr, 0, disk);
@@ -1204,7 +1204,7 @@ static int xinfo(const char *data, in_char *dest, size_t destlen,
     return 0;
 
   if (value != (char*)dest)
-    ConvertANSI(value, -1, CP_ACP, dest, destlen);
+    ConvertANSI(value, -1, CP_ACP, dest, destlen, NULL);
 
   return 1;
 }
@@ -1262,7 +1262,7 @@ int winampGetExtendedFileInfoW(const wchar_t *filename, const char *data,
     create_sc68();
 
     const int reset = !!SameStrA(data, "reset");
-    char uri[MAX_PATH] = { 0 };
+    char uri[MAX_PATH]/* = { 0 }*/;
     ConvertUnicodeFn(uri, ARRAYSIZE(uri), filename, CP_ACP);
 
     if (reset || !g_disk_info || !g_last_info || !SameStrA(g_last_info, uri))
@@ -1323,7 +1323,7 @@ int GetSubSongInfo(const wchar_t* filename) {
     trc->allin1 = 0;
     trc->sc68 = sc68_create(0);
     if (trc->sc68) {
-      char uri[MAX_PATH] = { 0 };
+      char uri[MAX_PATH]/* = { 0 }*/;
       ConvertUnicodeFn(uri, ARRAYSIZE(uri), filename, CP_ACP);
       if (!sc68_load_uri(trc->sc68, uri)) {
         if (tracks = sc68_cntl(trc->sc68, SC68_GET_TRACKS), tracks <= 0) {
