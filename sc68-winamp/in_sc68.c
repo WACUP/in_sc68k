@@ -486,7 +486,7 @@ static
  ****************************************************************************/
 void setvolume(const int volume)
 {
-  if (plugin.outMod)
+  if (plugin.outMod && plugin.outMod->SetVolume)
   {
     plugin.outMod->SetVolume(volume);
   }
@@ -498,7 +498,7 @@ static
  ****************************************************************************/
 void setpan(const int pan)
 {
-  if (plugin.outMod)
+  if (plugin.outMod && plugin.outMod->SetPan)
   {
     plugin.outMod->SetPan(pan);
   }
@@ -544,6 +544,7 @@ void stop(void)
 {
   if (lock()) {
     atomic_set(&g_stopreq,1);
+    WaitForThreadToClose(&g_thdl, 10000/*/INFINITE/**/);/*/
     if (CheckThreadHandleIsValid(&g_thdl)) {
       switch (WaitForSingleObjectEx(g_thdl,10000,TRUE)) {
       case WAIT_OBJECT_0:
@@ -553,7 +554,7 @@ void stop(void)
       default:
         DBG("thread did not exit normally\n");
       }
-    }
+    }/**/
     clean_close();
     unlock();
   }
@@ -613,8 +614,7 @@ int play(const in_char *fn)
 
   char* filename = 0;
   char uri[MAX_PATH]/* = { 0 }*/;
-  ConvertUnicodeFn(uri, ARRAYSIZE(uri), (wchar_t*)fn, CP_ACP);
-  const int settrack = extract_track_from_uri(uri, &filename);
+  const int settrack = extract_track_from_uri(ConvertUnicodeFn(uri, ARRAYSIZE(uri), (wchar_t*)fn, CP_ACP), &filename);
   if (settrack) {
     DBG("got specific track -- %d\n", settrack);
   }
@@ -763,8 +763,7 @@ void getfileinfo(const in_char * filename, in_char * title, int * msptr)
     /* some other disk */
     sc68_disk_t disk;
     char uri[MAX_PATH]/* = { 0 }*/;
-    ConvertUnicodeFn(uri, ARRAYSIZE(uri), filename, CP_ACP);
-    if (disk = wasc68_cache_get(uri), disk) {
+    if (disk = wasc68_cache_get(ConvertUnicodeFn(uri, ARRAYSIZE(uri), filename, CP_ACP)), disk) {
       xfinfo(title, msptr, 0, disk);
       wasc68_cache_release(disk, 0);
     }
@@ -1324,8 +1323,7 @@ int GetSubSongInfo(const wchar_t* filename) {
     trc->sc68 = sc68_create(0);
     if (trc->sc68) {
       char uri[MAX_PATH]/* = { 0 }*/;
-      ConvertUnicodeFn(uri, ARRAYSIZE(uri), filename, CP_ACP);
-      if (!sc68_load_uri(trc->sc68, uri)) {
+      if (!sc68_load_uri(trc->sc68, ConvertUnicodeFn(uri, ARRAYSIZE(uri), filename, CP_ACP))) {
         if (tracks = sc68_cntl(trc->sc68, SC68_GET_TRACKS), tracks <= 0) {
           tracks = 0;
         }
