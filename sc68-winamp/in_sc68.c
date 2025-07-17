@@ -375,7 +375,7 @@ static
  ****************************************************************************/
 void about(HWND hwnd)
 {
-  wchar_t message[512] = { 0 };
+  wchar_t message[512]/* = { 0 }*/;
   _snwprintf(message, ARRAYSIZE(message),
              L"%s\n\nsc68 (Atari ST & Amiga) player built\nusing "
              L"%hs & %hs\n© 1998-2016 Benjamin Gerard\n"
