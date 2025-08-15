@@ -234,16 +234,16 @@ static void GetFileExtensions(void)
 {
     if (!plugin.FileExtensions)
 	{
-        LPCWSTR extensions[] =
+        const InputFileListArray extensions[] =
 		{
-			{ L"SC68;SC68.GZ" },
-			{ L"SND;SNDH" }
+			{ L"SC68;SC68.GZ", 12 },
+			{ L"SND;SNDH", 8 }
 		},
             // TODO localise
 			descriptions[] =
 		{
-            { L"sc68 File (*.SC68;*.SC68.GZ)" },
-            { L"sndh File (*.SND;*.SNDH)" }
+            { L"sc68 File (*.SC68;*.SC68.GZ)", 28 },
+            { L"sndh File (*.SND;*.SNDH)", 24 }
 		};
 
 		plugin.FileExtensions = BuildInputFileListArrayString(extensions, descriptions,
@@ -506,7 +506,8 @@ void setpan(const int pan)
 
 static void clean_close(void)
 {
-  if (g_thdl) {
+
+  if (CheckThreadHandleIsValid(&g_thdl)) {
     TerminateThread(g_thdl,1);
     CloseHandle(g_thdl);
     g_thdl = 0;
@@ -1096,6 +1097,7 @@ static int xinfo(const char *data, in_char *dest, size_t destlen,
 {
   sc68_music_info_t tmpmi = {0}, * const mi = &tmpmi;
   const char * value = 0;
+  int value_len = -1;
   if (sc68_music_info(sc68, mi, track>0 ? track : SC68_DEF_TRACK, disk)) {
   }
   else if (!strcasecmp(data,"album")) { /* Album name */
@@ -1125,7 +1127,7 @@ static int xinfo(const char *data, in_char *dest, size_t destlen,
   }
   else if (!strcasecmp(data,"track")) {
     if (track == mi->trk.track) {
-      value = (char*)I2WStr(track, dest, destlen);
+      value = (char*)I2WStrLen(track, dest, destlen, &value_len);
     }
   }
   /* else if (!strcasecmp(data,"disc")) { */
@@ -1148,9 +1150,9 @@ static int xinfo(const char *data, in_char *dest, size_t destlen,
   else if (!strcasecmp(data,"length")) {
     /* length in ms */
     if (track == mi->trk.track) {
-      value = (char*)I2WStr(mi->trk.time_ms, dest, destlen);
+      value = (char*)I2WStrLen(mi->trk.time_ms, dest, destlen, &value_len);
     } else {
-      value = (char*)I2WStr(mi->dsk.time_ms, dest, destlen);
+      value = (char*)I2WStrLen(mi->dsk.time_ms, dest, destlen, &value_len);
     }
   }
   else if (!strcasecmp(data,"year")) {
@@ -1169,12 +1171,12 @@ static int xinfo(const char *data, in_char *dest, size_t destlen,
     value = get_tag(&mi->dsk,"comment");
   }
   else if (!strcasecmp(data, "samplerate")) {
-    value = (char*)I2WStr(sc68_cntl(g_sc68, SC68_GET_SPR), dest, destlen);
+    value = (char*)I2WStrLen(sc68_cntl(g_sc68, SC68_GET_SPR), dest, destlen, &value_len);
   }
   else if (!strcasecmp(data, "bitrate")) {
     const int br = (sc68_cntl(g_sc68, SC68_GET_SPR) * 2 * 16);
     if (br > 0) {
-      value = (char*)I2WStr((br / 1000), dest, destlen);
+      value = (char*)I2WStrLen((br / 1000), dest, destlen, &value_len);
     }
   }
   else if (!strcasecmp(data, "bitdepth")) {
@@ -1187,11 +1189,11 @@ static int xinfo(const char *data, in_char *dest, size_t destlen,
   }
   else if (!strcasecmp(data, "formatinformation")) {
     // TODO localise
-    PrintfCch(dest, destlen, TEXT("Length: %u seconds\nSamplerate: %d Hz\n")
-              TEXT("Loop count: %d\n# of tracks: %d"), ((track == mi->trk.track) ?
-              mi->trk.time_ms : mi->dsk.time_ms) / 1000, sc68_cntl(g_sc68,
-              SC68_GET_SPR), sc68_cntl(g_sc68, SC68_GET_LOOPS),
-              sc68_cntl(g_sc68, SC68_GET_TRACKS));
+    value_len = (int)PrintfCch(dest, destlen, TEXT("Length: %u seconds\nSamplerate: %d")
+                               TEXT(" Hz\nLoop count: %d\n# of tracks: %d"), ((track ==
+                               mi->trk.track) ? mi->trk.time_ms : mi->dsk.time_ms) / 1000,
+                               sc68_cntl(g_sc68, SC68_GET_SPR), sc68_cntl(g_sc68,
+                               SC68_GET_LOOPS), sc68_cntl(g_sc68, SC68_GET_TRACKS));
     value = (char*)dest;
     //value = I2AStr(sc68_cntl(g_sc68, SC68_GET_SPR), dest, destlen);
   }  
@@ -1203,7 +1205,7 @@ static int xinfo(const char *data, in_char *dest, size_t destlen,
     return 0;
 
   if (value != (char*)dest)
-    ConvertANSI(value, -1, CP_ACP, dest, destlen, NULL);
+    ConvertANSI(value, value_len, CP_ACP, dest, destlen, NULL);
 
   return 1;
 }
