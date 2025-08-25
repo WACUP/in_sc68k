@@ -676,9 +676,7 @@ int play(const in_char *fn)
 
 
   /* Init play thread */
-  g_thdl = StartThread(playloop, g_magic, /*plugin.config->
-					   GetInt(playbackConfigGroupGUID, L"priority",
-						  */THREAD_PRIORITY_HIGHEST/*)*/, 0, NULL);
+  g_thdl = StartPlaybackThread(playloop, g_magic, 0, NULL);
 
   if (err = !g_thdl, !err) {
     atomic_set(&g_playing,1);
