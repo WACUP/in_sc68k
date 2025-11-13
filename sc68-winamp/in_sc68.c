@@ -1259,9 +1259,7 @@ int winampGetExtendedFileInfoW(const wchar_t *filename, const char *data,
     return 0;
   }
 
-  if (data && *data && dest && max > 2) {
-    create_sc68();
-
+  if (data && *data && dest && (max > 2)) {
     const int reset = !!SameStrA(data, "reset");
     char uri[MAX_PATH]/* = { 0 }*/;
     ConvertUnicodeFn(uri, ARRAYSIZE(uri), filename, CP_ACP);
@@ -1276,7 +1274,7 @@ int winampGetExtendedFileInfoW(const wchar_t *filename, const char *data,
 
       if (!reset)
       {
-        int res = 0;
+        create_sc68();
 
         if (g_disk_info)
         {
@@ -1287,9 +1285,9 @@ int winampGetExtendedFileInfoW(const wchar_t *filename, const char *data,
         g_last_settrack = extract_track_from_uri(uri, &g_last_info);
 
         if (g_disk_info = wasc68_cache_get(g_last_info), g_disk_info) {
-          res = xinfo(data, dest, max, 0, g_disk_info, g_last_settrack);
+          return xinfo(data, dest, max, 0, g_disk_info, g_last_settrack);
         }
-        return res;
+        return 0;
       }
       else
       {
