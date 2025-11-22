@@ -185,9 +185,14 @@ void sc68_unlock(sc68_t * sc68) {
 /*****************************************************************************
  * THE INPUT MODULE
  ****************************************************************************/
+#define OUR_INPUT_PLUG_IN_FEATURES INPUT_HAS_READ_META | INPUT_USES_UNIFIED_ALT3 | \
+                                   INPUT_HAS_FORMAT_CONVERSION_LEGACY/* | \
+                                   INPUT_HAS_FORMAT_CONVERSION_SET_TIME_MODE*/
+
 In_Module plugin =
 {
   IN_VER_WACUP,               /* Input plugin version as defined in in2.h */
+  IN_INIT_PRE_FEATURES
   (char*)
   "sc68 (Atari ST & Amiga music) v" PACKAGE_VERSION, /* Description */
   0,                          /* hMainWindow (filled in by winamp)  */
@@ -223,9 +228,7 @@ In_Module plugin =
   NULL,                  /* setinfo call filled in by winamp */
   0,                     /* out_mod filled in by winamp */
   NULL,	// api_service
-  INPUT_HAS_READ_META | INPUT_USES_UNIFIED_ALT3 |
-  INPUT_HAS_FORMAT_CONVERSION_LEGACY/* |
-  INPUT_HAS_FORMAT_CONVERSION_SET_TIME_MODE*/,
+  IN_INIT_POST_FEATURES
   GetFileExtensions,	// loading optimisation
   IN_INIT_WACUP_END_STRUCT
 };
@@ -671,9 +674,13 @@ int play(const in_char *fn)
 
   /* Init info and visualization stuff */
   plugin.SetInfo((g_spr * 2 * 16) / 1000, g_spr / 1000, 2, 1);
+
+#ifndef _WIN64
   plugin.SAVSAInit(g_maxlatency, g_spr);
   plugin.VSASetInfo(g_spr, 2);
-
+#else
+  plugin.VisInitInfo(g_maxlatency, g_spr, 2);
+#endif
 
   /* Init play thread */
   g_thdl = StartPlaybackThread(playloop, g_magic, 0, NULL);
