@@ -1103,6 +1103,7 @@ static int xinfo(const char *data, in_char *dest, size_t destlen,
   sc68_music_info_t tmpmi = {0}, * const mi = &tmpmi;
   const char * value = 0;
   int value_len = -1;
+  const int length_seconds = !strcasecmp(data, "length_seconds");
   if (sc68_music_info(sc68, mi, track>0 ? track : SC68_DEF_TRACK, disk)) {
   }
   else if (!strcasecmp(data,"album")) { /* Album name */
@@ -1152,12 +1153,14 @@ static int xinfo(const char *data, in_char *dest, size_t destlen,
   } else if (!strcasecmp(data,"genre")) {
     value = mi->genre;
   }
-  else if (!strcasecmp(data,"length")) {
+  else if (length_seconds || !strcasecmp(data,"length")) {
     /* length in ms */
     if (track == mi->trk.track) {
-      value = (char*)I2WStrLen(mi->trk.time_ms, dest, destlen, &value_len);
+      value = (char*)I2WStrLen((!length_seconds ? mi->trk.time_ms :
+             (mi->trk.time_ms / 1000)), dest, destlen, &value_len);
     } else {
-      value = (char*)I2WStrLen(mi->dsk.time_ms, dest, destlen, &value_len);
+      value = (char*)I2WStrLen((!length_seconds ? mi->dsk.time_ms :
+             (mi->dsk.time_ms / 1000)), dest, destlen, &value_len);
     }
   }
   else if (!strcasecmp(data,"year")) {

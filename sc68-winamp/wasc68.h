@@ -59,7 +59,7 @@
  * the original value can be found in the configure.ac file.
  */
 #ifndef PACKAGE_VERSION
-# define PACKAGE_VERSION "1.1.7"
+# define PACKAGE_VERSION "1.1.8"
 #endif
 
 #include "sc68/sc68.h"
