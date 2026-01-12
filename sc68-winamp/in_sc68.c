@@ -1102,7 +1102,7 @@ static int xinfo(const char *data, in_char *dest, size_t destlen,
 {
   sc68_music_info_t tmpmi = {0}, * const mi = &tmpmi;
   const char * value = 0;
-  int value_len = -1;
+  int value_len = 0;
   const int length_seconds = !strcasecmp(data, "length_seconds");
   if (sc68_music_info(sc68, mi, track>0 ? track : SC68_DEF_TRACK, disk)) {
   }
@@ -1193,7 +1193,8 @@ static int xinfo(const char *data, in_char *dest, size_t destlen,
       //      like it should be vs the code!
       dest[0] = L'1';
       dest[1] = L'6';
-      dest[2] = 0;/**/
+      dest[2] = 0;
+      return 2;
   }
   else if (!strcasecmp(data, "formatinformation")) {
     // TODO localise
@@ -1213,9 +1214,12 @@ static int xinfo(const char *data, in_char *dest, size_t destlen,
     return 0;
 
   if (value != (char*)dest)
-    ConvertANSI(value, value_len, CP_ACP, dest, destlen, NULL);
-
-  return 1;
+  {
+    size_t copied = 0;
+    ConvertANSI(value, value_len, CP_ACP, dest, destlen, &copied);
+    value_len = (int)copied;
+  }
+  return value_len;
 }
 
 
@@ -1253,15 +1257,8 @@ int winampGetExtendedFileInfoW(const wchar_t *filename, const char *data,
   }
   else if (SameStrA(data, "family"))
   {
-    if (SameStr(filename, L".gz"))
-    {
-      CopyCchStr(dest, max, TEXT("sc68 (Compressed) Audio File"));
-    }
-    else
-    {
-      CopyCchStr(dest, max, TEXT("sc68 Audio File"));
-    }
-    return 1;
+    return (int)CopyCchStrEx(dest, max, (SameStr(filename, L".gz") ? TEXT(
+              "sc68 (Compressed) Audio File") : TEXT("sc68 Audio File")));
   }
 
   if (!filename || !filename[0])
@@ -1272,7 +1269,14 @@ int winampGetExtendedFileInfoW(const wchar_t *filename, const char *data,
   if (data && *data && dest && (max > 2)) {
     const int reset = !!SameStrA(data, "reset");
     char uri[MAX_PATH]/* = { 0 }*/;
-    ConvertUnicodeFn(uri, ARRAYSIZE(uri), filename, CP_ACP);
+    if (!reset)
+    {
+        ConvertUnicodeFn(uri, ARRAYSIZE(uri), filename, CP_ACP);
+    }
+    else
+    {
+        uri[0] = 0;
+    }
 
     if (reset || !g_disk_info || !g_last_info || !SameStrA(g_last_info, uri))
     {
