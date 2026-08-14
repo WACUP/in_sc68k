@@ -52,7 +52,6 @@
 //#define  _MSC_VER 2000
 #include "winamp/wa_ipc.h"
 #include "winamp/ipc_pe.h"
-#include <strsafe.h>
 #define WA_UTILS_SIMPLE
 #include <loader/loader/utils.h>
 #include <loader/loader/delay_load_helper.h>
@@ -107,6 +106,8 @@ static volatile LONG g_playing;    /* true while playing     */
 static volatile LONG g_stopreq;    /* stop requested         */
 static volatile LONG g_paused;     /* pause status           */
 static volatile LONG g_settrack;   /* request change track   */
+
+static CRITICAL_SECTION g_info_cs;
 
 //static BYTE          g_spl[576*8]; /* Sample buffer          */
 
@@ -381,7 +382,7 @@ void about(HWND hwnd)
   wchar_t message[512]/* = { 0 }*/;
   _snwprintf(message, ARRAYSIZE(message),
              L"%s\n\nsc68 (Atari ST & Amiga) player built\nusing "
-             L"%hs & %hs\n© 1998-2016 Benjamin Gerard\n"
+             L"%hs & %hs\n\xA9 1998-2016 Benjamin Gerard\n"
 #ifdef DEBUG
              L"\n" " !!! DEBUG Build !!! "
 #endif
@@ -548,7 +549,7 @@ void stop(void)
 {
   if (lock()) {
     atomic_set(&g_stopreq,1);
-    WaitForThreadToClose(&g_thdl, 10000/*/INFINITE/**/);/*/
+    WaitForThreadToClose(&g_thdl, 10000);/*
     if (CheckThreadHandleIsValid(&g_thdl)) {
       switch (WaitForSingleObjectEx(g_thdl,10000,TRUE)) {
       case WAIT_OBJECT_0:
@@ -902,6 +903,8 @@ static
  ****************************************************************************/
 int init(void)
 {
+  InitializeCriticalSectionEx(&g_info_cs, 400, CRITICAL_SECTION_NO_DEBUG_INFO);
+
   // TODO setup localisation / plug-in names, etc
   plugin.description = (char*)L"sc68 (Atari ST & Amiga) Player v" TEXT(PACKAGE_VERSION);
   return IN_INIT_SUCCESS;
@@ -1095,6 +1098,8 @@ void quit(void)
   msg68_cat_free(wasc68_cat);
   wasc68_cat = msg68_NEVER;
   sc68_shutdown();
+
+  DeleteCriticalSection(&g_info_cs);
 }
 
 static int xinfo(const char *data, in_char *dest, size_t destlen,
@@ -1266,6 +1271,7 @@ int winampGetExtendedFileInfoW(const wchar_t *filename, const char *data,
     return 0;
   }
 
+  int ret = 0;
   if (data && *data && dest && (max > 2)) {
     const int reset = !!SameStrA(data, "reset");
     char uri[MAX_PATH]/* = { 0 }*/;
@@ -1276,6 +1282,15 @@ int winampGetExtendedFileInfoW(const wchar_t *filename, const char *data,
     else
     {
         uri[0] = 0;
+    }
+
+    // this might sometimes mess up so we'll see if what's
+    // being requested is a reset & if it is then we'll do
+    // a check to see if something else has the lock to do
+    // a quick bail to try to avoid a hang related failure
+    if (!GetMetadataLookupLock(&g_info_cs, reset))
+    {
+        return 0;
     }
 
     if (reset || !g_disk_info || !g_last_info || !SameStrA(g_last_info, uri))
@@ -1299,9 +1314,8 @@ int winampGetExtendedFileInfoW(const wchar_t *filename, const char *data,
         g_last_settrack = extract_track_from_uri(uri, &g_last_info);
 
         if (g_disk_info = wasc68_cache_get(g_last_info), g_disk_info) {
-          return xinfo(data, dest, max, 0, g_disk_info, g_last_settrack);
+          ret = xinfo(data, dest, max, 0, g_disk_info, g_last_settrack);
         }
-        return 0;
       }
       else
       {
@@ -1314,10 +1328,11 @@ int winampGetExtendedFileInfoW(const wchar_t *filename, const char *data,
     }
     else if (g_disk_info)
     {
-      return xinfo(data, dest, max, 0, g_disk_info, g_last_settrack);
+      ret = xinfo(data, dest, max, 0, g_disk_info, g_last_settrack);
     }
+    LeaveCriticalSection(&g_info_cs);
   }
-  return 0;
+  return ret;
 }
 
 struct transcon {
@@ -1404,4 +1419,5 @@ int save_config(void)
 }
 #endif
 
-DLL_DELAY_LOAD_HANDLER
+#define nullptr NULL
+DLL_DELAY_LOAD_HANDLER_OVERRIDE
