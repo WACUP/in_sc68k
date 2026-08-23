@@ -124,8 +124,12 @@ static void config(HWND);
 static void about(HWND);
 static  int infobox(const in_char *, HWND);
 static  int isourfile(IN_ISOURFILE_PARAM);
+#ifndef _WIN64
 static void pause(void);
 static void unpause(void);
+#else
+static void setpause(const int);
+#endif
 static  int ispaused(void);
 static  int getlength(void);
 static  int getoutputtime(void);
@@ -210,8 +214,12 @@ In_Module plugin =
   0/*infobox*/,
   isourfile,
   play,
+#ifndef _WIN64
   pause,
   unpause,
+#else
+  setpause,
+#endif
   ispaused,
   stop,
 
@@ -394,7 +402,7 @@ void about(HWND hwnd)
   AboutMessageBox(hwnd, message, L"sc68 (Atari ST & Amiga) Player");
 }
 
-/*static
+//static
 /*****************************************************************************
  * INFO DIALOG
  ****************************************************************************/
@@ -418,6 +426,7 @@ int isourfile(IN_ISOURFILE_PARAM)
 /*****************************************************************************
  * PAUSE
  ****************************************************************************/
+#ifndef _WIN64
 static void pause(void) {
   atomic_set(&g_paused,1);
   if (plugin.outMod)
@@ -433,6 +442,15 @@ static void unpause(void) {
     plugin.outMod->Pause(0);
   }
 }
+#else
+static void setpause(const int paused) {
+  atomic_set(&g_paused,paused);
+  if (plugin.outMod)
+  {
+    plugin.outMod->Pause(paused);
+  }
+}
+#endif
 
 static int ispaused(void) {
   return atomic_get(&g_paused);
