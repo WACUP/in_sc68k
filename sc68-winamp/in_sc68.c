@@ -125,9 +125,11 @@ static void about(HWND);
 static  int infobox(const in_char *, HWND);
 static  int isourfile(IN_ISOURFILE_PARAM);
 #ifndef _WIN64
+static  int play(const in_char*);
 static void pause(void);
 static void unpause(void);
 #else
+static  int play(const in_char*, const int seek_offset);
 static void setpause(const int);
 #endif
 static  int ispaused(void);
@@ -136,7 +138,6 @@ static  int getoutputtime(void);
 static void setoutputtime(const int);
 static void setvolume(const int);
 static void setpan(const int);
-static  int play(const in_char *);
 static void stop(void);
 static void getfileinfo(const in_char *, in_char *, int *);
 
@@ -606,7 +607,11 @@ static
  * @reval  -1 on file not found
  * @retval !0 stopping winamp error
  ****************************************************************************/
+#ifndef _WIN64
 int play(const in_char *fn)
+#else
+int play(const in_char *fn, const int seek_offset)  // TODO
+#endif
 {
   int err = 1;
 
