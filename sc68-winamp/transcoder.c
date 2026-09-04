@@ -47,6 +47,9 @@
 #define THE_INPUT_PLAYBACK_GUID
 #include "winamp/in2.h"
 
+#define WA_UTILS_SIMPLE
+#include <loader/loader/utils.h>
+
 /* in_sc68.c */
 EXTERN In_Module plugin;
 EXTERN HMODULE g_cfgdll;
@@ -73,12 +76,12 @@ EXPORT
  * @return  Transcoding context struct (sc68_t right now)
  * @retval  0 on errror
  */
-intptr_t winampGetExtendedRead_open(
-  const char *uri,int *siz, int *bps, int *nch, int *spr)
+intptr_t winampGetExtendedRead_openW(
+  const wchar_t *uri,size_t *siz, int *bps, int *nch, int *spr)
 {
   struct transcon * trc;
   int res, ms, tracks, track, asid = 0;
-  char * filename = 0;
+  char * filename = 0, fn[MAX_PATH];
 
   create_sc68();
 
@@ -92,8 +95,9 @@ intptr_t winampGetExtendedRead_open(
   trc->sc68 = sc68_create(0);
   if (!trc->sc68)
     goto error;
-  track = extract_track_from_uri(uri, &filename);
-  if (sc68_load_uri(trc->sc68, filename/*/uri/**/))
+  ConvertUnicodeFn(fn, ARRAYSIZE(fn), uri, CP_ACP);
+  track = extract_track_from_uri(fn, &filename);
+  if (sc68_load_uri(trc->sc68, filename/*uri*/))
     goto error;
   if (tracks = sc68_cntl(trc->sc68,SC68_GET_TRACKS), tracks <= 0)
     goto error;
@@ -150,7 +154,7 @@ intptr_t winampGetExtendedRead_open(
   *nch = 2;
   *spr = sc68_cntl(trc->sc68, SC68_GET_SPR);
   *bps = 16;
-  *siz = (int) ((uint64_t)ms * (*spr) / 1000) << 2;
+  *siz = (size_t) ((uint64_t)ms * (*spr) / 1000) << 2;
   if (filename)
     free(filename);
   return (intptr_t)trc;

@@ -642,7 +642,7 @@ int play(const in_char *fn, const int seek_offset)  // TODO
 
   char* filename = 0;
   char uri[MAX_PATH]/* = { 0 }*/;
-  const int settrack = extract_track_from_uri(ConvertUnicodeFn(uri, ARRAYSIZE(uri), (wchar_t*)fn, CP_ACP), &filename);
+  const int settrack = extract_track_from_uri(ConvertUnicodeFn(uri, ARRAYSIZE(uri), fn, CP_ACP), &filename);
   if (settrack) {
     DBG("got specific track -- %d\n", settrack);
   }
