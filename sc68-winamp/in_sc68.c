@@ -866,11 +866,9 @@ DWORD WINAPI playloop(LPVOID cookie)
      * it is requested. */
     if (n > 0) {
       int l;
-      int vispos = g_trackpos + plugin.outMod->GetOutputTime();
 
       /* Give the samples to the vis subsystems */
-      plugin.SAAddPCMData (spl, 2, 16, vispos);
-      /*plugin.VSAAddPCMData(spl, 2, 16, vispos);*/
+      plugin.SAAddPCMData (spl, 2, 16, g_trackpos + plugin.outMod->GetOutputTime());
 
       /* If we have a DSP plug-in, then call it on our samples */
       l = (
