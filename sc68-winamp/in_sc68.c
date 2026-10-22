@@ -688,8 +688,7 @@ int play(const in_char *fn, const int seek_offset)  // TODO
   g_track = sc68_cntl(g_sc68, SC68_GET_TRACK);
 
   /* Init output module */
-  g_maxlatency = (plugin.outMod && plugin.outMod->Open && g_spr ?
-                  plugin.outMod->Open(g_spr, 2, 16, -1, -1) : -1);
+  g_maxlatency = OpenOutputPlugin(&plugin, g_spr, 2, 16);
   if (g_maxlatency < 0)
     goto exit;
 
@@ -1402,7 +1401,7 @@ int winampSetExtendedFileInfo(const char *fn, const char *data, char *val)
  * complain.
  */
 EXPORT
-int winampWriteExtendedFileInfo()
+int winampWriteExtendedFileInfo(WEFIPARAM)
 {
   DBG("fake success\n");
   return 1;
