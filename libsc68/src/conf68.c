@@ -204,7 +204,7 @@ int config68_save(const char * confname)
 
     /*strncpy(tmp, "sc68://config/", sizeof(tmp));
     strcat68(tmp, confname, sizeof(tmp));/*/
-    CombinePathA(tmp, GetPaths()->settings_dir_83, config68_file);/**/
+    CombinePathA(tmp, GetPaths()->settings_dir_83, config68_file, FALSE);/**/
     os = uri68_vfs(tmp, 2, 0);
     err = vfs68_open(os);
     if (!err) {
@@ -298,7 +298,6 @@ static int load_from_registry(const char * confname)
 #endif
 
 /* Load config from file */
-#include <windows.h>
 static int load_from_file(const char * confname)
 {
   vfs68_t * is = 0;
@@ -308,7 +307,7 @@ static int load_from_file(const char * confname)
 
   /*strcpy(s, "sc68://config/");
   strcat(s, confname);/*/
-  CombinePathA(s, GetPaths()->settings_dir_83, config68_file);/**/
+  CombinePathA(s, GetPaths()->settings_dir_83, config68_file, FALSE);/**/
   is = uri68_vfs(s, 1, 0);
   err = vfs68_open(is);
   if (err)

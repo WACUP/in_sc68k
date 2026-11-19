@@ -599,6 +599,12 @@ int extract_track_from_uri(const char *uri, char **filename)
   return 0;
 }
 
+static int StorePlaybackThread(HANDLE thread, LPVOID parameter)
+{
+    g_thdl = thread;
+    return 1;
+}
+
 static
 /*****************************************************************************
  * PLAY
@@ -706,7 +712,7 @@ int play(const in_char *fn, const int seek_offset)  // TODO
 #endif
 
   /* Init play thread */
-  g_thdl = StartPlaybackThread(playloop, g_magic, 0, NULL);
+  StartPlaybackThread(playloop, g_magic, 0, StorePlaybackThread);
 
   if (err = !g_thdl, !err) {
     atomic_set(&g_playing,1);

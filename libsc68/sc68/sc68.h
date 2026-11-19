@@ -129,11 +129,11 @@ typedef struct {
   /** debug mask (set bit to set in msg68). */
   int debug_set_mask;
 
-  /** number of arguments in command line (modified) */
-  int argc;
-
   /** command line arguments */
   char ** argv;
+
+  /** number of arguments in command line (modified) */
+  int argc;
 
   /** structure for init flags. */
   struct init_flags {
